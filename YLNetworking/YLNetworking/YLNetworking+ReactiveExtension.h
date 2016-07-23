@@ -25,10 +25,8 @@
 
 @protocol YLNetworkingRACProtocol <NSObject>
 
-@required
-- (id<YLNetworkingRACOperationProtocol>)networkingRAC;
-
 @optional
+- (id<YLNetworkingRACOperationProtocol>)networkingRAC;
 // 定义枚举在这允许获取多个APIManager的RAC
 - (NSArray<id<YLNetworkingRACOperationProtocol>>*)networkingRACs;
 @end
