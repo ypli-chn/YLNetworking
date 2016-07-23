@@ -1,0 +1,190 @@
+//
+//  YLAPIProxy.m
+//  YLNetworking
+//
+//  Created by Yunpeng on 16/7/1.
+//  Copyright © 2016年 Yunpeng. All rights reserved.
+//
+
+#import "YLAPIProxy.h"
+#import <AFNetworking/AFNetworking.h>
+#import "YLBaseAPIManager.h"
+#import "NSURLRequest+YLNetworking.h"
+
+@interface YLAPIProxy()
+@property (nonatomic, strong) NSMutableDictionary *dispatchTable;
+@property (nonatomic, strong) NSNumber *recordedRequestId;
+@property (nonatomic, strong) AFHTTPSessionManager *sessionManager;
+
+@end
+@implementation YLAPIProxy
+
++ (instancetype)sharedInstance {
+    static dispatch_once_t onceToken;
+    static YLAPIProxy *instance = nil;
+    dispatch_once(&onceToken, ^{
+        instance = [[self alloc] init];
+    });
+    return instance;
+}
+
+- (NSInteger)loadGETWithParams:(NSDictionary *)params
+                       useJSON:(BOOL)useJSON
+                          host:(NSString *)host
+                          path:(NSString *)path
+                    apiVersion:(NSString *)version
+                       success:(YLAPIProxySuccess)success
+                          fail:(YLAPIProxyFail)fail {
+    NSURLRequest *request = [YLAPIProxy requestWithParams:params
+                                                  useJSON:useJSON
+                                                   method:@"GET"
+                                                     host:host
+                                                     path:path
+                                               apiVersion:version];
+    
+    NSNumber *requestId = [self loadRequest:request success:success fail:fail];
+    return [requestId integerValue];
+}
+
+- (NSInteger)loadPOSTWithParams:(NSDictionary *)params
+                        useJSON:(BOOL)useJSON
+                           host:(NSString *)host
+                           path:(NSString *)path
+                     apiVersion:(NSString *)version
+                        success:(YLAPIProxySuccess)success
+                           fail:(YLAPIProxyFail)fail {
+    NSURLRequest *request = [YLAPIProxy requestWithParams:params
+                                                  useJSON:useJSON
+                                                   method:@"POST"
+                                                     host:host
+                                                     path:path
+                                               apiVersion:version];
+    NSNumber *requestId = [self loadRequest:request success:success fail:fail];
+    return [requestId integerValue];
+}
+
+- (void)cancelRequestWithRequestId:(NSNumber *)requestID {
+    NSURLSessionDataTask *requestOperation = self.dispatchTable[requestID];
+    [requestOperation cancel];
+    [self.dispatchTable removeObjectForKey:requestID];
+}
+
+- (void)cancelRequestWithRequestIdList:(NSArray *)requestIDList {
+    for (NSNumber *requestId in requestIDList) {
+        [self cancelRequestWithRequestId:requestId];
+    }
+}
+
+
+- (NSNumber *)loadRequest:(NSURLRequest *)request
+                  success:(YLAPIProxySuccess)success
+                     fail:(YLAPIProxyFail)fail {
+    NSLog(@"%@",request.HTTPBody);
+    __block NSURLSessionDataTask *dataTask = nil;
+    
+    
+    dataTask = [self.sessionManager dataTaskWithRequest:request
+                                      completionHandler:^(NSURLResponse * _Nonnull response, id  _Nullable responseObject, NSError * _Nullable error) {
+        NSNumber *requestID = @([dataTask taskIdentifier]);
+        [self.dispatchTable removeObjectForKey:requestID];
+        NSData *responseData = nil;
+        if ([responseObject isKindOfClass:[NSData class]]) {
+            responseData = responseObject;
+        }
+        if (error) {
+            NSLog(@"网络错误:%@",error);
+            if (error.code == NSURLErrorTimedOut) {
+                fail?fail(YLResponseError(@"网络超时",YLResponseStatusErrorTimeout,[requestID integerValue])):nil;
+            } else {
+                fail?fail(YLResponseError(@"网络错误",YLResponseStatusErrorUnknown,[requestID integerValue])):nil;
+            }
+        } else {
+            NSString *responseString = nil;
+            if (responseData != nil) {
+                responseString = [[NSString alloc] initWithData:responseData
+                                                       encoding:NSUTF8StringEncoding];;
+            }
+            
+            YLResponseModel *responseModel =
+            [[YLResponseModel alloc] initWithResponseString:responseString
+                                                  requestId:[requestID integerValue]
+                                                    request:request
+                                               responseData:responseData
+                                                     status:YLResponseStatusSuccess];
+            success?success(responseModel):nil;
+        }
+    }];
+    
+    NSNumber *requestId = @([dataTask taskIdentifier]);
+    self.dispatchTable[requestId] = dataTask;
+    [dataTask resume];
+    return requestId;
+}
+
+- (BOOL)isReachable {
+    if ([AFNetworkReachabilityManager sharedManager].networkReachabilityStatus == AFNetworkReachabilityStatusUnknown) {
+        return YES;
+    } else {
+        return [[AFNetworkReachabilityManager sharedManager] isReachable];
+    }
+}
+
+#pragma mark - Getter
+
+- (NSMutableDictionary *)dispatchTable {
+    if (_dispatchTable == nil) {
+        _dispatchTable = [[NSMutableDictionary alloc] init];
+    }
+    return _dispatchTable;
+}
+
+- (AFHTTPSessionManager *)sessionManager {
+    if (_sessionManager == nil) {
+        _sessionManager = [AFHTTPSessionManager manager];
+        _sessionManager.responseSerializer = [AFHTTPResponseSerializer serializer];
+//        _sessionManager.securityPolicy.allowInvalidCertificates = YES;
+//        _sessionManager.securityPolicy.validatesDomainName = NO;
+    }
+    return _sessionManager;
+}
+@end
+
+@implementation YLAPIProxy (YLRequestGenerator)
++ (NSURLRequest *)requestWithParams:(NSDictionary *)params
+                            useJSON:(BOOL)useJSON
+                             method:(NSString *)method
+                               host:(NSString *)host
+                               path:(NSString *)path
+                         apiVersion:(NSString *)version {
+    NSString *urlString;
+    if (version.length != 0) {
+        urlString = [NSString stringWithFormat:@"%@/%@/%@",host, version, path];
+    } else {
+        urlString = [NSString stringWithFormat:@"%@/%@",host, path];
+    }
+    
+    NSError *error = nil;
+    if (![method isEqualToString:@"GET"]
+        && ![method isEqualToString:@"POST"]) {
+        NSLog(@"[YLAPIProxy]未知请求方法");
+        return nil;
+    }
+    NSLog(@"%@",params);
+    
+    AFJSONRequestSerializer *serializer = [AFJSONRequestSerializer serializer];
+    serializer.timeoutInterval = kYLNetworkingTimeoutSeconds;
+    NSURLRequest *request = [serializer requestWithMethod:method
+                                                URLString:urlString
+                                               parameters:params
+                                                    error:&error];
+    
+    request.yl_requestParams = params;
+    
+    if (error) {
+        NSLog(@"REQUEST ERROR:%@",request);
+        return nil;
+    }
+    return request;
+}
+@end
+
