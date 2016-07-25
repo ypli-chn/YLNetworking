@@ -13,5 +13,5 @@
 @interface UserListViewModel : NSObject<YLNetworkingListRACProtocol>
 @property (nonatomic, copy) NSString *keywords;
 @property (nonatomic, readonly) BOOL hasNextPage;
-@property (nonatomic, copy) NSArray<UserItemViewModel *> *newsViewModels;
+@property (nonatomic, copy) NSArray<UserItemViewModel *> *userItemViewModels;
 @end

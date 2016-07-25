@@ -1,5 +1,5 @@
 //
-//  NewsListViewController.m
+//  UserListViewController.m
 //  YLNetworking
 //
 //  Created by Yunpeng on 16/7/3.
@@ -9,8 +9,6 @@
 #import "UserListViewController.h"
 #import "UserItemViewCell.h"
 #import "MJRefresh.h"
-
-
 
 
 @interface UserListViewController ()<UITableViewDelegate, UITableViewDataSource>
@@ -26,7 +24,7 @@
     
     self.operationButton.rac_command = self.viewModel.networkingRAC.refreshCommand;
 
-    [[[RACObserve(self.viewModel, newsViewModels) skip:1]
+    [[[RACObserve(self.viewModel, userItemViewModels) skip:1]
      deliverOn:[RACScheduler mainThreadScheduler]]
      subscribeNext:^(id x) {
          @strongify(self);
@@ -56,8 +54,8 @@
 }
 
 - (void)setupTableView {
-    UINib *newsNib = [UINib nibWithNibName:@"UserItemViewCell" bundle:nil];
-    [self.tableView registerNib:newsNib forCellReuseIdentifier:UserItemViewCellIdentifier];
+    UINib *userNib = [UINib nibWithNibName:@"UserItemViewCell" bundle:nil];
+    [self.tableView registerNib:userNib forCellReuseIdentifier:UserItemViewCellIdentifier];
     self.tableView.header = [MJRefreshNormalHeader headerWithRefreshingCommand:self.viewModel.networkingRAC.refreshCommand];
     self.tableView.footer = [MJRefreshAutoNormalFooter footerWithRefreshingCommand:self.viewModel.networkingRAC.requestNextPageCommand];
 }
@@ -66,12 +64,12 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UserItemViewCell *cell = [tableView dequeueReusableCellWithIdentifier:UserItemViewCellIdentifier
                                                             forIndexPath:indexPath];
-    cell.viewModel = self.viewModel.newsViewModels[indexPath.row];
+    cell.viewModel = self.viewModel.userItemViewModels[indexPath.row];
     return cell;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [self.viewModel.newsViewModels count];
+    return [self.viewModel.userItemViewModels count];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {

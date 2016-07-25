@@ -1,5 +1,5 @@
 //
-//  NewsViewModel.h
+//  UserItemViewModel.h
 //  YLNetworking
 //
 //  Created by Yunpeng on 16/7/3.

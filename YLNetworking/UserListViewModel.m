@@ -10,7 +10,6 @@
 #import "UserAPIManager.h"
 @interface UserListViewModel()<YLAPIManagerDataSource>
 @property (nonatomic, strong) UserAPIManager *userAPIManager;
-@property (nonatomic, strong) UserAPIManager *newsAPIManager;
 @end
 @implementation UserListViewModel
 - (instancetype)init {
@@ -26,15 +25,15 @@
     [self.networkingRAC.executionSignal subscribeNext:^(id x) {
         @strongify(self);
         if ([x boolValue]) {
-            self.newsViewModels = nil;
+            self.userItemViewModels = nil;
         }
-        NSMutableArray *newsViewModels = [NSMutableArray arrayWithArray:self.newsViewModels];
-        NSArray *newsModels = [self.userAPIManager fetchDataFromModel];
-        RACSequence *newsViewModelSeq = [newsModels.rac_sequence map:^id(UserItemModel *model) {
+        NSMutableArray *userItemViewModels = [NSMutableArray arrayWithArray:self.userItemViewModels];
+        NSArray *userModels = [self.userAPIManager fetchDataFromModel];
+        RACSequence *userViewModelSeq = [userModels.rac_sequence map:^id(UserItemModel *model) {
             return [[UserItemViewModel alloc] initWithModel:model];
         }];
-        [newsViewModels addObjectsFromArray:newsViewModelSeq.array];
-        self.newsViewModels = newsViewModels;
+        [userItemViewModels addObjectsFromArray:userViewModelSeq.array];
+        self.userItemViewModels = userItemViewModels;
     }];
 }
 
