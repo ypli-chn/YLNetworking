@@ -10,9 +10,8 @@
 #import "YLPageAPIManager.h"
 #import <ReactiveCocoa/ReactiveCocoa.h>
 
-
-
 @protocol YLNetworkingRACOperationProtocol<NSObject>
+- (RACCommand *)requestCommand;
 - (RACCommand *)cancelCommand;
 - (RACSignal *)requestErrorSignal;
 - (RACSignal *)executionSignal;

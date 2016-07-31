@@ -89,7 +89,7 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
 
 - (id)fetchData;
 - (id)fetchDataWithReformer:(id<YLAPIManagerDataReformer>)reformer;
-- (id)fetchDataFromModel; // 默认没有实现，需要覆盖
+- (id)fetchDataFromModel:(Class)clazz; //默认只实现单个model，且对应model字段为data，否则需重写这个方法
 
 - (NSDictionary *)reformParams:(NSDictionary *)params;
 

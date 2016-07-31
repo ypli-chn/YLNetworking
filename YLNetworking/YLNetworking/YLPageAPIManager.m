@@ -7,6 +7,7 @@
 //
 
 #import "YLPageAPIManager.h"
+#import <Mantle/Mantle.h>
 const NSInteger kPageSizeNotFound = -1;
 const NSInteger kPageIsLoading = -1;
 const NSInteger kYLPageAPIManagerDefaultPageSize = 10;

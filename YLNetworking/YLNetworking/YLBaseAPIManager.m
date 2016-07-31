@@ -8,6 +8,7 @@
 
 #import "YLBaseAPIManager.h"
 #import "YLAPIProxy.h"
+#import <Mantle/Mantle.h>
 #import "YLAuthParamsGenerator.h"
 NSString * const kYLAPIBaseManagerRequestId = @"xyz.ypli.kYLAPIBaseManagerRequestID";
 
@@ -211,11 +212,18 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:apiPa
     return resultData;
 }
 
-- (id)fetchDataFromModel {
-    @throw [NSException exceptionWithName:[NSString stringWithFormat:@"%@ fetchDataFromModel failed",[self class]]
-                                   reason:@"Subclass of YLAPIBaseManager should override fetchDataFromModel."
-                                 userInfo:nil];
+- (id)fetchDataFromModel:(Class)clazz {
+    NSError *error;
+    id model = [MTLJSONAdapter modelOfClass:clazz fromJSONDictionary:[self fetchData][@"data"] error:&error];
+    NSLog(@"Error:%@",error);
+    return model;
 }
+
+//- (id)fetchDataFromModel {
+//    @throw [NSException exceptionWithName:[NSString stringWithFormat:@"%@ fetchDataFromModel failed",[self class]]
+//                                   reason:@"Subclass of YLAPIBaseManager should override fetchDataFromModel."
+//                                 userInfo:nil];
+//}
 
 #pragma mark - private API
 - (void)removeRequestIdWithRequestId:(NSInteger)requestId {
