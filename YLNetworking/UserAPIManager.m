@@ -8,7 +8,6 @@
 
 #import "UserAPIManager.h"
 #import <Mantle/Mantle.h>
-#import "UserItemModel.h"
 
 NSString * const kUserAPIManagerParamsKeySearchKeywords = @"kUserAPIManagerParamsKeySearchKeywords";
 @interface UserAPIManager ()
@@ -45,8 +44,8 @@ NSString * const kUserAPIManagerParamsKeySearchKeywords = @"kUserAPIManagerParam
     return resultParams;
 }
 
-- (id)fetchDataFromModel {
-    return [MTLJSONAdapter modelsOfClass:UserItemModel.class
+- (id)fetchDataFromModel:(Class)clazz {
+    return [MTLJSONAdapter modelsOfClass:clazz
                            fromJSONArray:[super fetchData][@"users"]
                                    error:nil];
 }
