@@ -9,6 +9,7 @@
 #ifndef YLNetworkingConfiguration_h
 #define YLNetworkingConfiguration_h
 
+#define YLNetworkingLog TRUE
 
 typedef NS_ENUM(NSUInteger, YLResponseStatus) {
     // 底层仅有这三种状态

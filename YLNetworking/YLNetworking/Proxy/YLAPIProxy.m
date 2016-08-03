@@ -10,6 +10,7 @@
 #import <AFNetworking/AFNetworking.h>
 #import "YLBaseAPIManager.h"
 #import "NSURLRequest+YLNetworking.h"
+#import "YLNetwokingLogger.h"
 
 @interface YLAPIProxy()
 @property (nonatomic, strong) NSMutableDictionary *dispatchTable;
@@ -79,9 +80,7 @@
 - (NSNumber *)loadRequest:(NSURLRequest *)request
                   success:(YLAPIProxySuccess)success
                      fail:(YLAPIProxyFail)fail {
-    NSLog(@"%@",request.HTTPBody);
     __block NSURLSessionDataTask *dataTask = nil;
-    
     
     dataTask = [self.sessionManager dataTaskWithRequest:request
                                       completionHandler:^(NSURLResponse * _Nonnull response, id  _Nullable responseObject, NSError * _Nullable error) {
@@ -92,7 +91,7 @@
             responseData = responseObject;
         }
         if (error) {
-            NSLog(@"网络错误:%@",error);
+            [YLNetwokingLogger logError:error.description];
             if (error.code == NSURLErrorTimedOut) {
                 fail?fail(YLResponseError(@"网络超时",YLResponseStatusErrorTimeout,[requestID integerValue])):nil;
             } else {
@@ -104,7 +103,9 @@
                 responseString = [[NSString alloc] initWithData:responseData
                                                        encoding:NSUTF8StringEncoding];;
             }
+            [YLNetwokingLogger logResponseWithRequest:request path:request.URL.absoluteString params:request.yl_requestParams response:responseString];
             
+//            [YLNetwokingLogger logResponseWithRequest:request path:<#(NSString *)#> isJSON:<#(BOOL)#> params:<#(id)#> requestType:<#(NSString *)#> response:<#(NSString *)#>]
             YLResponseModel *responseModel =
             [[YLResponseModel alloc] initWithResponseString:responseString
                                                   requestId:[requestID integerValue]
@@ -166,11 +167,10 @@
     NSError *error = nil;
     if (![method isEqualToString:@"GET"]
         && ![method isEqualToString:@"POST"]) {
-        NSLog(@"[YLAPIProxy]未知请求方法");
+        [YLNetwokingLogger logError:@"[YLAPIProxy]未知请求方法"];
         return nil;
     }
-    NSLog(@"%@",params);
-    
+
     AFJSONRequestSerializer *serializer = [AFJSONRequestSerializer serializer];
     serializer.timeoutInterval = kYLNetworkingTimeoutSeconds;
     NSURLRequest *request = [serializer requestWithMethod:method
@@ -181,9 +181,11 @@
     request.yl_requestParams = params;
     
     if (error) {
-        NSLog(@"REQUEST ERROR:%@",request);
+        [YLNetwokingLogger logError:request.description];
         return nil;
     }
+    
+    [YLNetwokingLogger logDebugInfoWithRequest:request path:urlString isJSON:useJSON params:params requestType:method];
     return request;
 }
 @end
