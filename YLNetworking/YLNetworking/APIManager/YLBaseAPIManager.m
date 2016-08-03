@@ -15,7 +15,7 @@ NSString * const kYLAPIBaseManagerRequestId = @"xyz.ypli.kYLAPIBaseManagerReques
 #define YLLoadRequest(REQUEST_METHOD, REQUEST_ID)                                                  \
 {\
 __weak typeof(self) weakSelf = self;\
-REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:apiParams useJSON:self.isRequestUsingJSON host:self.host path:self.child.path apiVersion:self.child.apiVersion success:^(YLResponseModel *response) {\
+REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:finalAPIParams useJSON:self.isRequestUsingJSON host:self.host path:self.child.path apiVersion:self.child.apiVersion success:^(YLResponseModel *response) {\
     __strong typeof(weakSelf) strongSelf = weakSelf;\
     [strongSelf dataDidLoad:response];\
 } fail:^(YLResponseError *error) {\
