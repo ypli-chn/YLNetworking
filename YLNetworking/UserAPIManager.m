@@ -33,6 +33,9 @@ NSString * const kUserAPIManagerParamsKeySearchKeywords = @"kUserAPIManagerParam
     return NO;
 }
 
+- (BOOL)shouldCache {
+    return YES;
+}
 - (YLRequestType)requestType {
     return YLRequestTypeGet;
 }

@@ -8,6 +8,8 @@
 
 #import "YLResponseModel.h"
 #import "NSURLRequest+YLNetworking.h"
+#import "YLAuthParamsGenerator.h"
+
 NSString * const YLNetworkingResponseErrorKey = @"xyz.ypli.error.responsee";
 @implementation YLResponseError
 @dynamic message;
@@ -52,7 +54,34 @@ NSString * const YLNetworkingResponseErrorKey = @"xyz.ypli.error.responsee";
         _responseData = responseData;
         _request = request;
         _requestParams = request.yl_requestParams;
+        _isCache = NO;
     }
     return self;
+}
+
+
+- (instancetype)initWithData:(NSData *)data {
+    self = [super init];
+    if (self) {
+        _contentString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        _requestId = 0;
+        _request = nil;
+        _responseData = [data copy];
+        _requestParams = nil;
+        _isCache = YES;
+    }
+    return self;
+}
+
+- (NSDictionary *)requestParamsExceptToken {
+    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:self.requestParams];
+    NSArray<NSString *> *keys = [YLAuthParamsGenerator authParams].allKeys;
+    // 这里保留UserId以防止不同用户的脏数据
+    [keys enumerateObjectsUsingBlock:^(NSString * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (![obj isEqualToString:kYLAuthParamsKeyUserId]) {
+             [dict removeObjectForKey:obj];
+        }
+    }];
+    return [dict copy];
 }
 @end

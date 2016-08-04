@@ -26,6 +26,7 @@ PODS:
   - ReactiveCocoa/no-arc (2.5)
   - ReactiveCocoa/UI (2.5):
     - ReactiveCocoa/Core
+  - YYCache (1.0.3)
 
 DEPENDENCIES:
   - AFNetworking
@@ -33,6 +34,7 @@ DEPENDENCIES:
   - Masonry
   - MJRefresh (~> 2.4.10)
   - ReactiveCocoa (~> 2.5)
+  - YYCache
 
 SPEC CHECKSUMS:
   AFNetworking: 5e0e199f73d8626b11e79750991f5d173d1f8b67
@@ -40,7 +42,8 @@ SPEC CHECKSUMS:
   Masonry: a1a931a0d08870ed8ae415a2ea5ea68ebcac77df
   MJRefresh: ca8e9589895977df32d379d46e6b8a5450b3ff44
   ReactiveCocoa: e2db045570aa97c695e7aa97c2bcab222ae51f4a
+  YYCache: 282f35b5b0990833d0b7a06d864a87141a021da2
 
-PODFILE CHECKSUM: a68b2662824382fbc2819f5778c42984906add83
+PODFILE CHECKSUM: ee0c27410554e395bf8f1724dc07fefbf423770a
 
 COCOAPODS: 1.0.1

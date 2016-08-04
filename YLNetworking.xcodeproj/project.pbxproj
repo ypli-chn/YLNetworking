@@ -16,7 +16,10 @@
 		F2455E721D52395100C1AAE8 /* YLAuthParamsGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = F2455E641D52395100C1AAE8 /* YLAuthParamsGenerator.m */; };
 		F2455E731D52395100C1AAE8 /* YLResponseModel.m in Sources */ = {isa = PBXBuildFile; fileRef = F2455E671D52395100C1AAE8 /* YLResponseModel.m */; };
 		F2455E741D52395100C1AAE8 /* YLAPIProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = F2455E6A1D52395100C1AAE8 /* YLAPIProxy.m */; };
-		F2455E781D523AC700C1AAE8 /* YLNetwokingLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = F2455E771D523AC700C1AAE8 /* YLNetwokingLogger.m */; };
+		F2455E781D523AC700C1AAE8 /* YLNetworkingLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = F2455E771D523AC700C1AAE8 /* YLNetworkingLogger.m */; };
+		F2455EA21D52620E00C1AAE8 /* YLCacheProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = F2455EA11D52620E00C1AAE8 /* YLCacheProxy.m */; };
+		F2455EA51D5262BB00C1AAE8 /* YLSignatureGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = F2455EA41D5262BB00C1AAE8 /* YLSignatureGenerator.m */; };
+		F2455EA81D52652000C1AAE8 /* Foundation+YLNetworking.m in Sources */ = {isa = PBXBuildFile; fileRef = F2455EA71D52652000C1AAE8 /* Foundation+YLNetworking.m */; };
 		F26203D01D3D45020050E932 /* UserAPIManager.m in Sources */ = {isa = PBXBuildFile; fileRef = F26203CF1D3D45020050E932 /* UserAPIManager.m */; };
 		F26203D51D3D456D0050E932 /* UserItemModel.m in Sources */ = {isa = PBXBuildFile; fileRef = F26203D41D3D456D0050E932 /* UserItemModel.m */; };
 		F26203DA1D3D45870050E932 /* UserItemViewModel.m in Sources */ = {isa = PBXBuildFile; fileRef = F26203D71D3D45870050E932 /* UserItemViewModel.m */; };
@@ -64,8 +67,14 @@
 		F2455E6A1D52395100C1AAE8 /* YLAPIProxy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = YLAPIProxy.m; sourceTree = "<group>"; };
 		F2455E6B1D52395100C1AAE8 /* YLNetworking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YLNetworking.h; sourceTree = "<group>"; };
 		F2455E6C1D52395100C1AAE8 /* YLNetworkingConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YLNetworkingConfiguration.h; sourceTree = "<group>"; };
-		F2455E761D523AC700C1AAE8 /* YLNetwokingLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YLNetwokingLogger.h; sourceTree = "<group>"; };
-		F2455E771D523AC700C1AAE8 /* YLNetwokingLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = YLNetwokingLogger.m; sourceTree = "<group>"; };
+		F2455E761D523AC700C1AAE8 /* YLNetworkingLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YLNetworkingLogger.h; sourceTree = "<group>"; };
+		F2455E771D523AC700C1AAE8 /* YLNetworkingLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = YLNetworkingLogger.m; sourceTree = "<group>"; };
+		F2455EA01D52620E00C1AAE8 /* YLCacheProxy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YLCacheProxy.h; sourceTree = "<group>"; };
+		F2455EA11D52620E00C1AAE8 /* YLCacheProxy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = YLCacheProxy.m; sourceTree = "<group>"; };
+		F2455EA31D5262BB00C1AAE8 /* YLSignatureGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YLSignatureGenerator.h; sourceTree = "<group>"; };
+		F2455EA41D5262BB00C1AAE8 /* YLSignatureGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = YLSignatureGenerator.m; sourceTree = "<group>"; };
+		F2455EA61D52652000C1AAE8 /* Foundation+YLNetworking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Foundation+YLNetworking.h"; sourceTree = "<group>"; };
+		F2455EA71D52652000C1AAE8 /* Foundation+YLNetworking.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "Foundation+YLNetworking.m"; sourceTree = "<group>"; };
 		F26203CE1D3D45020050E932 /* UserAPIManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserAPIManager.h; sourceTree = "<group>"; };
 		F26203CF1D3D45020050E932 /* UserAPIManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UserAPIManager.m; sourceTree = "<group>"; };
 		F26203D31D3D456D0050E932 /* UserItemModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserItemModel.h; sourceTree = "<group>"; };
@@ -155,6 +164,8 @@
 				F2455E5F1D52395100C1AAE8 /* NSURLRequest+YLNetworking.m */,
 				F2455E601D52395100C1AAE8 /* YLNetworking+ReactiveExtension.h */,
 				F2455E611D52395100C1AAE8 /* YLNetworking+ReactiveExtension.m */,
+				F2455EA61D52652000C1AAE8 /* Foundation+YLNetworking.h */,
+				F2455EA71D52652000C1AAE8 /* Foundation+YLNetworking.m */,
 			);
 			path = Category;
 			sourceTree = "<group>";
@@ -164,6 +175,8 @@
 			children = (
 				F2455E631D52395100C1AAE8 /* YLAuthParamsGenerator.h */,
 				F2455E641D52395100C1AAE8 /* YLAuthParamsGenerator.m */,
+				F2455EA31D5262BB00C1AAE8 /* YLSignatureGenerator.h */,
+				F2455EA41D5262BB00C1AAE8 /* YLSignatureGenerator.m */,
 			);
 			path = Generator;
 			sourceTree = "<group>";
@@ -182,6 +195,8 @@
 			children = (
 				F2455E691D52395100C1AAE8 /* YLAPIProxy.h */,
 				F2455E6A1D52395100C1AAE8 /* YLAPIProxy.m */,
+				F2455EA01D52620E00C1AAE8 /* YLCacheProxy.h */,
+				F2455EA11D52620E00C1AAE8 /* YLCacheProxy.m */,
 			);
 			path = Proxy;
 			sourceTree = "<group>";
@@ -189,8 +204,8 @@
 		F2455E751D523A4C00C1AAE8 /* Tools */ = {
 			isa = PBXGroup;
 			children = (
-				F2455E761D523AC700C1AAE8 /* YLNetwokingLogger.h */,
-				F2455E771D523AC700C1AAE8 /* YLNetwokingLogger.m */,
+				F2455E761D523AC700C1AAE8 /* YLNetworkingLogger.h */,
+				F2455E771D523AC700C1AAE8 /* YLNetworkingLogger.m */,
 			);
 			path = Tools;
 			sourceTree = "<group>";
@@ -472,14 +487,17 @@
 				F2E702601D36479500C6DAF7 /* AppDelegate.m in Sources */,
 				F2E7025D1D36479500C6DAF7 /* main.m in Sources */,
 				F26203D51D3D456D0050E932 /* UserItemModel.m in Sources */,
+				F2455EA51D5262BB00C1AAE8 /* YLSignatureGenerator.m in Sources */,
+				F2455EA21D52620E00C1AAE8 /* YLCacheProxy.m in Sources */,
 				F2455E6E1D52395100C1AAE8 /* YLPageAPIManager.m in Sources */,
 				F26203D01D3D45020050E932 /* UserAPIManager.m in Sources */,
 				F2455E6F1D52395100C1AAE8 /* MJRefresh+ReactiveExtension.m in Sources */,
 				F2455E711D52395100C1AAE8 /* YLNetworking+ReactiveExtension.m in Sources */,
-				F2455E781D523AC700C1AAE8 /* YLNetwokingLogger.m in Sources */,
+				F2455E781D523AC700C1AAE8 /* YLNetworkingLogger.m in Sources */,
 				F2455E741D52395100C1AAE8 /* YLAPIProxy.m in Sources */,
 				F2455E721D52395100C1AAE8 /* YLAuthParamsGenerator.m in Sources */,
 				F26203DB1D3D45870050E932 /* UserListViewModel.m in Sources */,
+				F2455EA81D52652000C1AAE8 /* Foundation+YLNetworking.m in Sources */,
 				F2455E731D52395100C1AAE8 /* YLResponseModel.m in Sources */,
 				F26203DA1D3D45870050E932 /* UserItemViewModel.m in Sources */,
 				F2455E6D1D52395100C1AAE8 /* YLBaseAPIManager.m in Sources */,

@@ -10,7 +10,8 @@
 #import <AFNetworking/AFNetworking.h>
 #import "YLBaseAPIManager.h"
 #import "NSURLRequest+YLNetworking.h"
-#import "YLNetwokingLogger.h"
+#import "YLNetworkingLogger.h"
+#import "Foundation+YLNetworking.h"
 
 @interface YLAPIProxy()
 @property (nonatomic, strong) NSMutableDictionary *dispatchTable;
@@ -91,7 +92,7 @@
             responseData = responseObject;
         }
         if (error) {
-            [YLNetwokingLogger logError:error.description];
+            [YLNetworkingLogger logError:error.description];
             if (error.code == NSURLErrorTimedOut) {
                 fail?fail(YLResponseError(@"网络超时",YLResponseStatusErrorTimeout,[requestID integerValue])):nil;
             } else {
@@ -103,7 +104,7 @@
                 responseString = [[NSString alloc] initWithData:responseData
                                                        encoding:NSUTF8StringEncoding];;
             }
-            [YLNetwokingLogger logResponseWithRequest:request path:request.URL.absoluteString params:request.yl_requestParams response:responseString];
+            [YLNetworkingLogger logResponseWithRequest:request path:request.URL.absoluteString params:request.yl_requestParams response:responseString];
             
 //            [YLNetwokingLogger logResponseWithRequest:request path:<#(NSString *)#> isJSON:<#(BOOL)#> params:<#(id)#> requestType:<#(NSString *)#> response:<#(NSString *)#>]
             YLResponseModel *responseModel =
@@ -157,17 +158,11 @@
                                host:(NSString *)host
                                path:(NSString *)path
                          apiVersion:(NSString *)version {
-    NSString *urlString;
-    if (version.length != 0) {
-        urlString = [NSString stringWithFormat:@"%@/%@/%@",host, version, path];
-    } else {
-        urlString = [NSString stringWithFormat:@"%@/%@",host, path];
-    }
-    
+    NSString *urlString = [NSString yl_urlStringForHost:host path:path apiVersion:version];
     NSError *error = nil;
     if (![method isEqualToString:@"GET"]
         && ![method isEqualToString:@"POST"]) {
-        [YLNetwokingLogger logError:@"[YLAPIProxy]未知请求方法"];
+        [YLNetworkingLogger logError:@"[YLAPIProxy]未知请求方法"];
         return nil;
     }
 
@@ -181,11 +176,11 @@
     request.yl_requestParams = params;
     
     if (error) {
-        [YLNetwokingLogger logError:request.description];
+        [YLNetworkingLogger logError:request.description];
         return nil;
     }
     
-    [YLNetwokingLogger logDebugInfoWithRequest:request path:urlString isJSON:useJSON params:params requestType:method];
+    [YLNetworkingLogger logDebugInfoWithRequest:request path:urlString isJSON:useJSON params:params requestType:method];
     return request;
 }
 @end

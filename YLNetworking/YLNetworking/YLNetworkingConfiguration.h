@@ -21,8 +21,7 @@ typedef NS_ENUM(NSUInteger, YLResponseStatus) {
 static BOOL kYLShouldCacheDefault = NO;
 static BOOL kYLServiceIsOnline = NO;
 static NSTimeInterval kYLNetworkingTimeoutSeconds = 20.0f;
-static NSTimeInterval kYLCacheOutdateTimeSeconds = 300; // 5分钟的cache过期时间
-static NSUInteger kYLCacheCountLimit = 1000; // 最多1000条cache
+static NSTimeInterval kYLCacheExpirationTimeDefault = 300; // 5分钟的cache过期时间
 
 
 static NSString *kServerURL = @"https://api.douban.com";

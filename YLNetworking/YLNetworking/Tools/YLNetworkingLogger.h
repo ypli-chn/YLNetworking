@@ -1,5 +1,5 @@
 //
-//  YLNetwokingLogger.h
+//  YLNetworkingLogger.h
 //  YLNetworking
 //
 //  Created by Yunpeng on 16/8/3.
@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-@interface YLNetwokingLogger : NSObject
+@interface YLNetworkingLogger : NSObject
 + (void)logDebugInfoWithRequest:(NSURLRequest *)request
                            path:(NSString *)path
                          isJSON:(BOOL)isJSON
@@ -19,6 +19,7 @@
                           path:(NSString *)path
                         params:(id)requestParams
                       response:(NSString *)response;
-
++ (void)logInfo:(NSString *)msg;
++ (void)logInfo:(NSString *)msg label:(NSString *)label;
 + (void)logError:(NSString *)msg;
 @end

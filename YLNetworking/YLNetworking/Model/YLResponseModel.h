@@ -31,12 +31,14 @@
 @property (nonatomic, copy, readonly) NSURLRequest *request;
 @property (nonatomic, copy, readonly) NSData *responseData;
 @property (nonatomic, copy) NSDictionary *requestParams;
-
 @property (nonatomic, assign, readonly) BOOL isCache;
 
+- (instancetype)initWithData:(NSData *)data;
 - (instancetype)initWithResponseString:(NSString *)responseString
                              requestId:(NSInteger)requestId
                                request:(NSURLRequest *)request
                           responseData:(NSData *)responseData
                                 status:(YLResponseStatus)status;
+
+- (NSDictionary *)requestParamsExceptToken;
 @end

@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-
+extern NSString * const kYLAuthParamsKeyUserId;
 @interface YLAuthParamsGenerator : NSObject
 + (NSDictionary *)authParams;
 @end

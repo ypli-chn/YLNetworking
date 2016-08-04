@@ -7,7 +7,9 @@
 //
 
 #import "YLAuthParamsGenerator.h"
-
+NSString * const  kYLAuthParamsKeyUserId = @"kYLAuthParamsKeyUserId"; //在此修改为userId对应的key
 @implementation YLAuthParamsGenerator
-
++ (NSDictionary *)authParams {
+    return nil;
+}
 @end

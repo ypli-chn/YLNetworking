@@ -9,6 +9,7 @@
 #import "YLBaseAPIManager.h"
 #import "YLAPIProxy.h"
 #import <Mantle/Mantle.h>
+#import "YLCacheProxy.h"
 #import "YLAuthParamsGenerator.h"
 NSString * const kYLAPIBaseManagerRequestId = @"xyz.ypli.kYLAPIBaseManagerRequestID";
 
@@ -50,10 +51,6 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
     return self;
 }
 
-//- (BOOL)shouldCache {
-//    return kYLShouldCacheDefault;
-//}
-
 - (NSString *)host {
     return kServerURL;
 }
@@ -68,6 +65,14 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
 
 - (BOOL)isRequestUsingJSON {
     return YES;
+}
+
+- (BOOL)shouldCache {
+    return kYLShouldCacheDefault;
+}
+
+- (NSInteger)cacheExpirationTime {
+    return kYLCacheExpirationTimeDefault;
 }
 
 - (BOOL)isReachable {
@@ -91,23 +96,28 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
 - (NSInteger)loadDataWithParams:(NSDictionary *)params {
     NSInteger requestId = 0;
     NSDictionary *apiParams = [self reformParams:params];
-    if ([self shouldLoadRequestWithParams:params]) {
+    NSMutableDictionary *finalAPIParams = [[NSMutableDictionary alloc] init];
+    if (params) {
+        [finalAPIParams addEntriesFromDictionary:apiParams];
+    }
+    if (self.child.isAuth) {
+        NSDictionary *authParams = [YLAuthParamsGenerator authParams];
+        if (authParams) {
+            [finalAPIParams addEntriesFromDictionary:authParams];
+        } else {
+            [self dataLoadFailed:
+             [YLBaseAPIManager errorWithRequestId:requestId
+                                           status:YLAPIManagerResponseStatusNeedLogin]];
+        }
+    }
+
+    if ([self shouldLoadRequestWithParams:finalAPIParams]) {
+        if ([self shouldCache] && [self tryLoadResponseFromCacheWithParams:finalAPIParams]) {
+            return 0;
+        }
+        
         if ([[YLAPIProxy sharedInstance] isReachable]) {
             self.isLoading = YES;
-            NSMutableDictionary *finalAPIParams = [[NSMutableDictionary alloc] init];
-            if (params) {
-                [finalAPIParams addEntriesFromDictionary:apiParams];
-            }
-            if (self.child.isAuth) {
-                NSDictionary *authParams = [YLAuthParamsGenerator authParams];
-                if (authParams) {
-                    [finalAPIParams addEntriesFromDictionary:authParams];
-                } else {
-                    [self dataLoadFailed:
-                     [YLBaseAPIManager errorWithRequestId:requestId
-                                                   status:YLAPIManagerResponseStatusNeedLogin]];
-                }
-            }
             switch (self.child.requestType) {
                 case YLRequestTypeGet:
                     YLLoadRequest(GET, requestId);
@@ -118,7 +128,7 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
                 default:
                     break;
             }
-            NSMutableDictionary *params = [apiParams mutableCopy];
+            NSMutableDictionary *params = [finalAPIParams mutableCopy];
             params[kYLAPIBaseManagerRequestId] = @(requestId);
             [self afterLoadRequestWithParams:params];
             return requestId;
@@ -136,7 +146,6 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
 
 #pragma mark - api callbacks
 - (void)dataDidLoad:(YLResponseModel *)responseModel {
-    
     self.isLoading = NO;
     [self removeRequestIdWithRequestId:responseModel.requestId];
     
@@ -168,6 +177,12 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
     if([self isResponseDataCorrect:responseModel]) {
         if ([self beforePerformSuccessWithResponseModel:responseModel]) {
             [self.delegate apiManagerLoadDataSuccess:self];
+
+            NSLog(@"网络请求加载完毕!!!!!!");
+            if ([self shouldCache] && !responseModel.isCache) {
+                [[YLCacheProxy sharedInstance] setCacheData:responseModel.responseData forParams:responseModel.requestParamsExceptToken host:self.host path:self.child.path apiVersion:self.child.apiVersion withExpirationTime:self.child.cacheExpirationTime];
+            }
+            
         }
         [self afterPerformSuccessWithResponseModel:responseModel];
     } else {
@@ -219,12 +234,6 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
     return model;
 }
 
-//- (id)fetchDataFromModel {
-//    @throw [NSException exceptionWithName:[NSString stringWithFormat:@"%@ fetchDataFromModel failed",[self class]]
-//                                   reason:@"Subclass of YLAPIBaseManager should override fetchDataFromModel."
-//                                 userInfo:nil];
-//}
-
 #pragma mark - private API
 - (void)removeRequestIdWithRequestId:(NSInteger)requestId {
     NSNumber *requestIdToRemove = nil;
@@ -253,6 +262,27 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
             return params;
         }
     }
+}
+
+- (BOOL)tryLoadResponseFromCacheWithParams:(NSDictionary *)params {
+    NSData *cache = [[YLCacheProxy sharedInstance] cacheForParams:params host:self.host path:self.child.path apiVersion:self.child.apiVersion];
+    if (cache == nil) {
+        return NO;
+    }
+    
+    __weak typeof(self) weakSelf = self;
+    
+    
+    // 必须等return之后调用加载完毕才有效
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            __strong typeof (weakSelf) strongSelf = weakSelf;
+            YLResponseModel *responseModel = [[YLResponseModel alloc] initWithData:cache];
+            [strongSelf dataDidLoad:responseModel];
+        });
+    });
+    
+    return YES;
 }
 
 #define YLResponseErrorWithMSG(MSG) YLResponseError(MSG, status, requestId)

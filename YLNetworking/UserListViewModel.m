@@ -23,6 +23,7 @@
 - (void)setupRAC {
     @weakify(self);
     [self.networkingRAC.executionSignal subscribeNext:^(id x) {
+        NSLog(@"加载好了:%@",x);
         @strongify(self);
         if ([x boolValue]) {
             self.userItemViewModels = nil;

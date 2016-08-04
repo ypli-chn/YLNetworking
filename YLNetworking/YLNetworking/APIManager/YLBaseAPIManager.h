@@ -44,6 +44,9 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
 - (YLRequestType)requestType;
 - (BOOL)isResponseJSONable;
 - (BOOL)isRequestUsingJSON;
+
+- (BOOL)shouldCache;
+- (NSInteger)cacheExpirationTime; // 返回0或者负数则永不过期
 @end
 
 @protocol YLAPIManagerDataSource <NSObject>
@@ -99,7 +102,7 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
 - (BOOL)isResponseJSONable;     //default is YES;
 - (BOOL)isRequestUsingJSON;     //default is YES;
 
-
+- (NSInteger)cacheExpirationTime; // 返回0或者负数则永不过期
 
 #pragma mark - 拦截器
 // 用于子类需要监听相关事件，覆盖时需调用super对应方法
