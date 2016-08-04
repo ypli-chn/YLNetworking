@@ -36,6 +36,7 @@
         [userItemViewModels addObjectsFromArray:userViewModelSeq.array];
         self.userItemViewModels = userItemViewModels;
     }];
+    NSLog(@"----------> hash:%lu",self.userAPIManager.hash);
 }
 
 - (NSDictionary *)paramsForAPI:(YLBaseAPIManager *)manager {

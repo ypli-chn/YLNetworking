@@ -27,6 +27,7 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
 }\
 
 @interface YLBaseAPIManager()
+@property (nonatomic, assign, readonly) NSUInteger createTime;
 @property (nonatomic, strong, readwrite) id rawData;
 @property (nonatomic, assign, readwrite) BOOL isLoading;
 @property (nonatomic, assign) BOOL isNativeDataEmpty;
@@ -42,6 +43,7 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
     if (self) {
         if ([self conformsToProtocol:@protocol(YLAPIManager)]) {
             self.child = (id <YLAPIManager>)self;
+            _createTime = (NSUInteger)[NSDate timeIntervalSinceReferenceDate];
         } else {
             @throw [NSException exceptionWithName:[NSString stringWithFormat:@"%@ init failed",[self class]]
                                            reason:@"Subclass of YLAPIBaseManager should implement <YLAPIManager>"
@@ -49,6 +51,10 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
         }
     }
     return self;
+}
+
+- (NSUInteger)hash {
+    return [self.class hash] ^ self.createTime;
 }
 
 - (NSString *)host {
