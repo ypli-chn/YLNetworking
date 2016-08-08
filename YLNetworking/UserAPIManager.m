@@ -39,6 +39,7 @@ NSString * const kUserAPIManagerParamsKeySearchKeywords = @"kUserAPIManagerParam
 - (YLRequestType)requestType {
     return YLRequestTypeGet;
 }
+
 - (NSDictionary *)reformParams:(NSDictionary *)params {
     NSMutableDictionary *resultParams = [[NSMutableDictionary alloc] init];
     resultParams[@"q"] = params[kUserAPIManagerParamsKeySearchKeywords];
