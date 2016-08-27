@@ -25,10 +25,7 @@
     [self.networkingRAC.executionSignal subscribeNext:^(id x) {
         NSLog(@"加载好了:%@",x);
         @strongify(self);
-        if ([x boolValue]) {
-            self.userItemViewModels = nil;
-        }
-        NSMutableArray *userItemViewModels = [NSMutableArray arrayWithArray:self.userItemViewModels];
+        NSMutableArray *userItemViewModels = [x boolValue]?[NSMutableArray array]:[NSMutableArray arrayWithArray:self.userItemViewModels];
         NSArray *userModels = [self.userAPIManager fetchDataFromModel:UserItemModel.class];
         RACSequence *userViewModelSeq = [userModels.rac_sequence map:^id(UserItemModel *model) {
             return [[UserItemViewModel alloc] initWithModel:model];
