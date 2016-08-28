@@ -85,6 +85,7 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
 @property (nonatomic, weak) id<YLAPIManagerDelegate> delegate;
 @property (nonatomic, weak) id<YLAPIManagerInterceptor> interceptor;
 
+// addDependency和removeDependency仅在loadData前执行有效
 - (void)addDependency:(YLBaseAPIManager *)apiManager;
 - (void)removeDependency:(YLBaseAPIManager *)apiManager;
 
