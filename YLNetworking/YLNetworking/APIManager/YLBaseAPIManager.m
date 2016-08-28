@@ -32,7 +32,7 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
 @property (nonatomic, assign, readwrite) BOOL isLoading;
 @property (nonatomic, assign) BOOL isNativeDataEmpty;
 @property (nonatomic, strong) NSMutableArray *requestIdList;
-
+@property (nonatomic, strong) NSMutableSet *dependencySet;
 @property (nonatomic, weak) YLBaseAPIManager<YLAPIManager>* child;
 
 @end
@@ -44,6 +44,8 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
         if ([self conformsToProtocol:@protocol(YLAPIManager)]) {
             self.child = (id <YLAPIManager>)self;
             _createTime = (NSUInteger)[NSDate timeIntervalSinceReferenceDate];
+            _continueMutex = dispatch_semaphore_create(0);
+            _dependencySet = [NSMutableSet set];
         } else {
             @throw [NSException exceptionWithName:[NSString stringWithFormat:@"%@ init failed",[self class]]
                                            reason:@"Subclass of YLAPIBaseManager should implement <YLAPIManager>"
@@ -92,6 +94,18 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
     return _isLoading;
 }
 
+- (void)addDependency:(YLBaseAPIManager *)apiManager {
+    // 此处用NSMutableSet而没用NSHash​Table
+    // 是由于此处必须是强引用，以防止在此apiManager请求前，所依赖的apiManager被释放，而导致无法判断依赖的apiManager是否完成
+    // 此处会导致被依赖的apiManager只能等待所有产生该依赖的apiManager被释放完后才能释放。
+    
+    [self.dependencySet addObject:apiManager];
+}
+
+- (void)removeDependency:(YLBaseAPIManager *)apiManager {
+    [self.dependencySet removeObject:apiManager];
+}
+
 - (NSInteger)loadData {
     NSDictionary *params = [self.dataSource paramsForAPI:self];
     NSInteger requestId = [self loadDataWithParams:params];
@@ -118,6 +132,7 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
     }
 
     if ([self shouldLoadRequestWithParams:finalAPIParams]) {
+        // 注意此处如果是使用缓存，则不考虑依赖关系
         if ([self shouldCache] && [self tryLoadResponseFromCacheWithParams:finalAPIParams]) {
             return 0;
         }
@@ -134,9 +149,17 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
                 default:
                     break;
             }
-            NSMutableDictionary *params = [finalAPIParams mutableCopy];
-            params[kYLAPIBaseManagerRequestId] = @(requestId);
-            [self afterLoadRequestWithParams:params];
+            
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+                [self waitForDependency];
+                // 在此resume
+                [[YLAPIProxy sharedInstance] resumeRequestWithRequestId:@(requestId)];
+                
+                NSMutableDictionary *params = [finalAPIParams mutableCopy];
+                params[kYLAPIBaseManagerRequestId] = @(requestId);
+                [self afterLoadRequestWithParams:params];
+            });
+            
             return requestId;
         } else {
             [self dataLoadFailed:
@@ -168,27 +191,30 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
         }
         
         self.rawData = jsonDict;
-        NSInteger status = [jsonDict[@"status"] integerValue];
-        if (status != YLAPIManagerResponseStatusSuccess) {
-            YLResponseError *error = [YLBaseAPIManager errorWithRequestId:responseModel.requestId
-                                                                   status:status
-                                                                    extra:jsonDict[@"message"]];
-            
-            [self.delegate apiManagerLoadDataFail:error];
-        }
+#warning 如果你的返回值里也有status，请取消下面注释
+//        NSInteger status = [jsonDict[@"status"] integerValue];
+//        if (status != YLAPIManagerResponseStatusSuccess) {
+//            YLResponseError *error = [YLBaseAPIManager errorWithRequestId:responseModel.requestId
+//                                                                   status:status
+//                                                                    extra:jsonDict[@"message"]];
+//            
+//            [self.delegate apiManagerLoadDataFail:error];
+//            return;
+//        }
     } else {
         self.rawData = [responseModel.responseData copy];
     }
     
     if([self isResponseDataCorrect:responseModel]) {
         if ([self beforePerformSuccessWithResponseModel:responseModel]) {
+            NSLog(@"数据加载完毕");
             [self.delegate apiManagerLoadDataSuccess:self];
 
-            NSLog(@"网络请求加载完毕!!!!!!");
             if ([self shouldCache] && !responseModel.isCache) {
                 [[YLCacheProxy sharedInstance] setCacheData:responseModel.responseData forParams:responseModel.requestParamsExceptToken host:self.host path:self.child.path apiVersion:self.child.apiVersion withExpirationTime:self.child.cacheExpirationTime];
             }
             
+            dispatch_semaphore_signal(self.continueMutex);
         }
         [self afterPerformSuccessWithResponseModel:responseModel];
     } else {
@@ -241,6 +267,20 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
 }
 
 #pragma mark - private API
+
+// 有可能卡死线程，需异步使用此方法
+- (void)waitForDependency {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        for (YLBaseAPIManager *apiManager in self.dependencySet) {
+            NSLog(@"wait %@",apiManager);
+            dispatch_semaphore_wait(apiManager.continueMutex, DISPATCH_TIME_FOREVER);
+            // 得到后立刻释放，防止其他请求无法进行
+            NSLog(@"%@ Done",apiManager);
+            dispatch_semaphore_signal(apiManager.continueMutex);
+        }
+    });
+}
+
 - (void)removeRequestIdWithRequestId:(NSInteger)requestId {
     NSNumber *requestIdToRemove = nil;
     for (NSNumber *storedRequestId in self.requestIdList) {
@@ -276,15 +316,15 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
         return NO;
     }
     
-    __weak typeof(self) weakSelf = self;
-    
-    
-    // 必须等return之后调用加载完毕才有效
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        dispatch_async(dispatch_get_main_queue(), ^{
-            __strong typeof (weakSelf) strongSelf = weakSelf;
-            YLResponseModel *responseModel = [[YLResponseModel alloc] initWithData:cache];
-            [strongSelf dataDidLoad:responseModel];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        [self waitForDependency];
+
+        // 必须等return之后调用加载完毕才有效
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            dispatch_async(dispatch_get_main_queue(), ^{
+                YLResponseModel *responseModel = [[YLResponseModel alloc] initWithData:cache];
+                [self dataDidLoad:responseModel];
+            });
         });
     });
     

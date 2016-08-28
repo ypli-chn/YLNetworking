@@ -7,9 +7,12 @@
 //
 
 #import <XCTest/XCTest.h>
-
-@interface YLNetworkingTests : XCTestCase
-
+#import "UserAPIManager.h"
+@interface YLNetworkingTests : XCTestCase <YLAPIManagerDataSource,YLAPIManagerDelegate> {
+    XCTestExpectation *expectation;
+}
+@property (nonatomic, strong) UserAPIManager *apiManagerFirst;
+@property (nonatomic, strong) UserAPIManager *apiManagerSecond;
 @end
 
 @implementation YLNetworkingTests
@@ -34,6 +37,60 @@
     [self measureBlock:^{
         // Put the code you want to measure the time of here.
     }];
+}
+
+
+
+- (void)testDependency {
+    expectation = [self expectationWithDescription:@"YLNetworkingTest"];
+    
+    self.apiManagerFirst = [[UserAPIManager alloc] init];
+    self.apiManagerFirst.dataSource = self;
+    self.apiManagerFirst.delegate = self;
+    
+    self.apiManagerSecond = [[UserAPIManager alloc] init];
+    self.apiManagerSecond.dataSource = self;
+    self.apiManagerSecond.delegate = self;
+    
+//    UserAPIManager *apiManagerSecond = [[UserAPIManager alloc] init];
+//    apiManagerFirst.dataSource = self;
+    
+    [self.apiManagerSecond addDependency:self.apiManagerFirst];
+    [self.apiManagerSecond loadNextPage];
+    [self.apiManagerFirst loadNextPage];
+//    sleep(10);
+    
+    [self waitForExpectationsWithTimeout:10 handler:nil];
+    
+}
+
+- (void)apiManagerLoadDataSuccess:(YLBaseAPIManager *)manager {
+    if (manager == self.apiManagerFirst) {
+        NSLog(@"apiManagerFirst Done");
+    } else if(manager == self.apiManagerSecond) {
+        NSLog(@"apiManagerSecond Done");
+        [expectation fulfill];
+    }
+}
+
+- (void)apiManagerLoadDataFail:(YLResponseError *)error {
+    NSLog(@"===> %@",error);
+    [expectation fulfill];
+}
+
+- (NSDictionary *)paramsForAPI:(YLBaseAPIManager *)manager {
+    NSDictionary *params = @{};
+    if (manager == self.apiManagerFirst) {
+        params = @{
+                   kUserAPIManagerParamsKeySearchKeywords:@"First",
+                   };
+    } else if(manager == self.apiManagerSecond) {
+        params = @{
+                   kUserAPIManagerParamsKeySearchKeywords:@"Second",
+                   };
+    }
+   
+    return params;
 }
 
 @end

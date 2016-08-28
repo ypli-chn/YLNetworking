@@ -23,7 +23,6 @@
 - (void)setupRAC {
     @weakify(self);
     [self.networkingRAC.executionSignal subscribeNext:^(id x) {
-        NSLog(@"加载好了:%@",x);
         @strongify(self);
         NSMutableArray *userItemViewModels = [x boolValue]?[NSMutableArray array]:[NSMutableArray arrayWithArray:self.userItemViewModels];
         NSArray *userModels = [self.userAPIManager fetchDataFromModel:UserItemModel.class];
@@ -33,7 +32,6 @@
         [userItemViewModels addObjectsFromArray:userViewModelSeq.array];
         self.userItemViewModels = userItemViewModels;
     }];
-    NSLog(@"----------> hash:%lu",self.userAPIManager.hash);
 }
 
 - (NSDictionary *)paramsForAPI:(YLBaseAPIManager *)manager {

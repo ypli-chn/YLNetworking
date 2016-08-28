@@ -79,10 +79,14 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
 
 @interface YLBaseAPIManager : NSObject
 @property (nonatomic, assign, readonly) BOOL isLoading;
+@property (nonatomic) dispatch_semaphore_t continueMutex;
 
 @property (nonatomic, weak) id<YLAPIManagerDataSource> dataSource;
 @property (nonatomic, weak) id<YLAPIManagerDelegate> delegate;
 @property (nonatomic, weak) id<YLAPIManagerInterceptor> interceptor;
+
+- (void)addDependency:(YLBaseAPIManager *)apiManager;
+- (void)removeDependency:(YLBaseAPIManager *)apiManager;
 
 - (NSInteger)loadData;
 - (void)cancelAllRequests;

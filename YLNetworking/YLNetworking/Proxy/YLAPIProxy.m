@@ -65,10 +65,19 @@
     return [requestId integerValue];
 }
 
-- (void)cancelRequestWithRequestId:(NSNumber *)requestID {
-    NSURLSessionDataTask *requestOperation = self.dispatchTable[requestID];
-    [requestOperation cancel];
-    [self.dispatchTable removeObjectForKey:requestID];
+- (void)resumeRequestWithRequestId:(NSNumber *)requestId {
+    NSURLSessionDataTask *requestTask = self.dispatchTable[requestId];
+    if (requestTask.state == NSURLSessionTaskStateSuspended) {
+        // 只执行被挂起的请求
+        [requestTask resume];
+    }
+}
+
+
+- (void)cancelRequestWithRequestId:(NSNumber *)requestId {
+    NSURLSessionDataTask *requestTask = self.dispatchTable[requestId];
+    [requestTask cancel];
+    [self.dispatchTable removeObjectForKey:requestId];
 }
 
 - (void)cancelRequestWithRequestIdList:(NSArray *)requestIDList {
@@ -106,7 +115,6 @@
             }
             [YLNetworkingLogger logResponseWithRequest:request path:request.URL.absoluteString params:request.yl_requestParams response:responseString];
             
-//            [YLNetwokingLogger logResponseWithRequest:request path:<#(NSString *)#> isJSON:<#(BOOL)#> params:<#(id)#> requestType:<#(NSString *)#> response:<#(NSString *)#>]
             YLResponseModel *responseModel =
             [[YLResponseModel alloc] initWithResponseString:responseString
                                                   requestId:[requestID integerValue]
@@ -119,7 +127,9 @@
     
     NSNumber *requestId = @([dataTask taskIdentifier]);
     self.dispatchTable[requestId] = dataTask;
-    [dataTask resume];
+//  此处只建立Task，但是不进行resume，为添加依赖方便
+//    [dataTask resume];
+    
     return requestId;
 }
 
