@@ -28,7 +28,8 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
     YLAPIManagerResponseStatusNoNetwork = 102,          //网络不通
     YLAPIManagerResponseStatusSuccess = 200,            //API请求成功且返回数据正确
     YLAPIManagerResponseStatusParsingError = 201,       //API请求成功但返回数据不正确
-    YLAPIManagerResponseStatusNeedLogin = 300,          //认证信息无效
+    YLAPIManagerResponseStatusTokenExpired = 300,       //token过期
+    YLAPIManagerResponseStatusNeedLogin = 301,          //认证信息无效
     YLAPIManagerResponseStatusRequestError = 400,       //请求出错，参数或方法错误
     YLAPIManagerResponseStatusTypeServerCrash = 500,    //服务器出错
     YLAPIManagerResponseStatusTypeServerMessage = 600,  //服务器自定义消息
@@ -57,8 +58,8 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
 
 @protocol YLAPIManagerDelegate <NSObject>
 @required
-- (void)apiManagerLoadDataSuccess:(YLBaseAPIManager *)manager;
-- (void)apiManagerLoadDataFail:(YLResponseError *)error;
+- (void)apiManagerLoadDataSuccess:(YLBaseAPIManager *)apiManager;
+- (void)apiManager:(YLBaseAPIManager *)apiManager loadDataFail:(YLResponseError *)error;
 @end
 
 
@@ -68,8 +69,8 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
 - (BOOL)apiManager:(YLBaseAPIManager *)manager beforePerformSuccessWithResponseModel:(YLResponseModel *)responsemodel;
 - (void)apiManager:(YLBaseAPIManager *)manager afterPerformSuccessWithResponseModel:(YLResponseModel *)responseModel;
 
-- (BOOL)apiManager:(YLBaseAPIManager *)manager beforePerformFailWithResponseModel:(YLResponseError *)responseModel;
-- (void)apiManager:(YLBaseAPIManager *)manager afterPerformFailWithResponseModel:(YLResponseError *)responseModel;
+- (BOOL)apiManager:(YLBaseAPIManager *)manager beforePerformFailWithResponseError:(YLResponseError *)error;
+- (void)apiManager:(YLBaseAPIManager *)manager afterPerformFailWithResponseError:(YLResponseError *)error;
 
 - (BOOL)apiManager:(YLBaseAPIManager *)manager shouldLoadRequestWithParams:(NSDictionary *)params;
 - (void)apiManager:(YLBaseAPIManager *)manager afterLoadRequestWithParams:(NSDictionary *)params;
@@ -79,7 +80,7 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
 
 @interface YLBaseAPIManager : NSObject
 @property (nonatomic, assign, readonly) BOOL isLoading;
-@property (nonatomic) dispatch_semaphore_t continueMutex;
+@property (nonatomic, readonly) dispatch_semaphore_t continueMutex;
 
 @property (nonatomic, weak) id<YLAPIManagerDataSource> dataSource;
 @property (nonatomic, weak) id<YLAPIManagerDelegate> delegate;
@@ -114,8 +115,8 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
 - (BOOL)beforePerformSuccessWithResponseModel:(YLResponseModel *)responseModel;
 - (void)afterPerformSuccessWithResponseModel:(YLResponseModel *)responseModel;
 
-- (BOOL)beforePerformFailWithResponseModel:(YLResponseError *)responseModel;
-- (void)afterPerformFailWithResponseModel:(YLResponseError *)responseModel;
+- (BOOL)beforePerformFailWithResponseError:(YLResponseError *)error;
+- (void)afterPerformFailWithResponseError:(YLResponseError *)error;
 
 - (BOOL)shouldLoadRequestWithParams:(NSDictionary *)params;
 - (void)afterLoadRequestWithParams:(NSDictionary *)params;

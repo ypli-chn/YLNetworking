@@ -73,9 +73,10 @@ const NSInteger kYLPageAPIManagerDefaultPageSize = 10;
 
 #pragma mark - override
 - (NSInteger)loadData {
-    @throw [NSException exceptionWithName:[NSString stringWithFormat:@"%@ load error",[self class]]
-                                   reason:@"Don't call this Method. Call loadNextPage instead."
-                                 userInfo:nil];
+   return [self loadNextPage];
+//    @throw [NSException exceptionWithName:[NSString stringWithFormat:@"%@ load error",[self class]]
+//                                   reason:@"Don't call this Method. Call loadNextPage instead."
+//                                 userInfo:nil];
 }
 
 - (BOOL)beforePerformSuccessWithResponseModel:(YLResponseModel *)responseModel {
@@ -87,11 +88,11 @@ const NSInteger kYLPageAPIManagerDefaultPageSize = 10;
     return [super beforePerformSuccessWithResponseModel:responseModel];
 }
 
-- (BOOL)beforePerformFailWithResponseModel:(YLResponseError *)error {
+- (BOOL)beforePerformFailWithResponseError:(YLResponseError *)error {
     if (self.currentPage > 0) {
         self.currentPage --;
     }
-    return [super beforePerformFailWithResponseModel:error];
+    return [super beforePerformFailWithResponseError:error];
 }
 
 

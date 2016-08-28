@@ -27,6 +27,7 @@
 		F26203DF1D3D45CA0050E932 /* UserListViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F26203DE1D3D45CA0050E932 /* UserListViewController.m */; };
 		F26203E31D3D45D50050E932 /* UserItemViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = F26203E11D3D45D50050E932 /* UserItemViewCell.m */; };
 		F26203E41D3D45D50050E932 /* UserItemViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = F26203E21D3D45D50050E932 /* UserItemViewCell.xib */; };
+		F2E0504F1D7280F1008E551F /* YLTokenRefresher.m in Sources */ = {isa = PBXBuildFile; fileRef = F2E0504E1D7280F1008E551F /* YLTokenRefresher.m */; };
 		F2E7025D1D36479500C6DAF7 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = F2E7025C1D36479500C6DAF7 /* main.m */; };
 		F2E702601D36479500C6DAF7 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = F2E7025F1D36479500C6DAF7 /* AppDelegate.m */; };
 		F2E702661D36479500C6DAF7 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F2E702641D36479500C6DAF7 /* Main.storyboard */; };
@@ -88,6 +89,8 @@
 		F26203E01D3D45D50050E932 /* UserItemViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserItemViewCell.h; sourceTree = "<group>"; };
 		F26203E11D3D45D50050E932 /* UserItemViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UserItemViewCell.m; sourceTree = "<group>"; };
 		F26203E21D3D45D50050E932 /* UserItemViewCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = UserItemViewCell.xib; sourceTree = "<group>"; };
+		F2E0504D1D7280F1008E551F /* YLTokenRefresher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YLTokenRefresher.h; sourceTree = "<group>"; };
+		F2E0504E1D7280F1008E551F /* YLTokenRefresher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = YLTokenRefresher.m; sourceTree = "<group>"; };
 		F2E702581D36479500C6DAF7 /* YLNetworking.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YLNetworking.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2E7025C1D36479500C6DAF7 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		F2E7025E1D36479500C6DAF7 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -151,6 +154,8 @@
 				F2455E581D52395100C1AAE8 /* YLBaseAPIManager.m */,
 				F2455E591D52395100C1AAE8 /* YLPageAPIManager.h */,
 				F2455E5A1D52395100C1AAE8 /* YLPageAPIManager.m */,
+				F2E0504D1D7280F1008E551F /* YLTokenRefresher.h */,
+				F2E0504E1D7280F1008E551F /* YLTokenRefresher.m */,
 			);
 			path = APIManager;
 			sourceTree = "<group>";
@@ -503,6 +508,7 @@
 				F2455E6D1D52395100C1AAE8 /* YLBaseAPIManager.m in Sources */,
 				F26203DF1D3D45CA0050E932 /* UserListViewController.m in Sources */,
 				F2455E701D52395100C1AAE8 /* NSURLRequest+YLNetworking.m in Sources */,
+				F2E0504F1D7280F1008E551F /* YLTokenRefresher.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

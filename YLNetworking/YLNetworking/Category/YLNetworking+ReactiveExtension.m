@@ -37,7 +37,7 @@
             [subscriber sendCompleted];
         }];
         
-        RACSignal *failSignal = [self rac_signalForSelector:@selector(afterPerformFailWithResponseModel:)];
+        RACSignal *failSignal = [self rac_signalForSelector:@selector(afterPerformFailWithResponseError:)];
         [[failSignal map:^id(RACTuple *tuple) {
             return tuple.first;
         }] subscribeNext:^(id x) {

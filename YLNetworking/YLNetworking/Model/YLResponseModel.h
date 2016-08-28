@@ -29,6 +29,7 @@
 @property (nonatomic, copy, readonly) NSString *contentString;
 @property (nonatomic, assign, readonly) NSInteger requestId;
 @property (nonatomic, copy, readonly) NSURLRequest *request;
+@property (nonatomic, copy, readonly) NSURLResponse *response;
 @property (nonatomic, copy, readonly) NSData *responseData;
 @property (nonatomic, copy) NSDictionary *requestParams;
 @property (nonatomic, assign, readonly) BOOL isCache;
@@ -37,6 +38,7 @@
 - (instancetype)initWithResponseString:(NSString *)responseString
                              requestId:(NSInteger)requestId
                                request:(NSURLRequest *)request
+                              response:(NSURLResponse *)response
                           responseData:(NSData *)responseData
                                 status:(YLResponseStatus)status;
 

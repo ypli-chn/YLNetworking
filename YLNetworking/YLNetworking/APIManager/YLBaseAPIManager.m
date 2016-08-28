@@ -11,6 +11,7 @@
 #import <Mantle/Mantle.h>
 #import "YLCacheProxy.h"
 #import "YLAuthParamsGenerator.h"
+#import "YLTokenRefresher.h"
 NSString * const kYLAPIBaseManagerRequestId = @"xyz.ypli.kYLAPIBaseManagerRequestID";
 
 #define YLLoadRequest(REQUEST_METHOD, REQUEST_ID)                                                  \
@@ -23,7 +24,7 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
     __strong typeof(weakSelf) strongSelf = weakSelf;\
     [strongSelf dataLoadFailed:error];\
 }];\
-[self.requestIdList addObject:@(REQUEST_ID)];\
+self.requestIdMap[@(REQUEST_ID)]= @(REQUEST_ID);\
 }\
 
 @interface YLBaseAPIManager()
@@ -31,10 +32,17 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
 @property (nonatomic, strong, readwrite) id rawData;
 @property (nonatomic, assign, readwrite) BOOL isLoading;
 @property (nonatomic, assign) BOOL isNativeDataEmpty;
-@property (nonatomic, strong) NSMutableArray *requestIdList;
+//@property (nonatomic, strong) NSMutableArray *requestIdList;
 @property (nonatomic, strong) NSMutableSet *dependencySet;
+
+
+// 此Map默认是 key -> value : requestId -> requsetId
+// 但是在重新访问时，需重新发起访问，此时原requsetId会对应新的requestId
+@property (nonatomic, strong) NSMutableDictionary *requestIdMap;
+
 @property (nonatomic, weak) YLBaseAPIManager<YLAPIManager>* child;
 
+//@property (nonatomic) dispatch_semaphore_t continueMutex;
 @end
 @implementation YLBaseAPIManager
 
@@ -88,7 +96,7 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
 }
 
 - (BOOL)isLoading {
-    if (self.requestIdList.count == 0) {
+    if (self.requestIdMap.count == 0) {
         _isLoading = NO;
     }
     return _isLoading;
@@ -130,13 +138,15 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
                                            status:YLAPIManagerResponseStatusNeedLogin]];
         }
     }
-
+    
+//  在此给所有的APIManager添加对YLTokenRefresher的依赖，利用AOP的形式用户无感知地刷新Token
+    [self addDependency:[YLTokenRefresher sharedInstance]];
+    
     if ([self shouldLoadRequestWithParams:finalAPIParams]) {
-        // 注意此处如果是使用缓存，则不考虑依赖关系
         if ([self shouldCache] && [self tryLoadResponseFromCacheWithParams:finalAPIParams]) {
             return 0;
         }
-        
+    
         if ([[YLAPIProxy sharedInstance] isReachable]) {
             self.isLoading = YES;
             switch (self.child.requestType) {
@@ -176,8 +186,8 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
 #pragma mark - api callbacks
 - (void)dataDidLoad:(YLResponseModel *)responseModel {
     self.isLoading = NO;
-    [self removeRequestIdWithRequestId:responseModel.requestId];
     
+    [self.requestIdMap removeObjectForKey:@(responseModel.requestId)];
     if ([self isResponseJSONable]) {
         NSError *error;
         NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:responseModel.responseData
@@ -198,7 +208,7 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
 //                                                                   status:status
 //                                                                    extra:jsonDict[@"message"]];
 //            
-//            [self.delegate apiManagerLoadDataFail:error];
+//            [self dataLoadFailed:error];
 //            return;
 //        }
     } else {
@@ -218,7 +228,7 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
         }
         [self afterPerformSuccessWithResponseModel:responseModel];
     } else {
-        [self.delegate apiManagerLoadDataFail:
+        [self dataLoadFailed:
          [YLBaseAPIManager errorWithRequestId:responseModel.requestId
                                        status:YLAPIManagerResponseStatusParsingError]];
     }
@@ -226,23 +236,37 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
 }
 
 - (void)dataLoadFailed:(YLResponseError *)error {
-    [self removeRequestIdWithRequestId:error.requestId];
-    if ([self beforePerformFailWithResponseModel:error]) {
-        [self.delegate apiManagerLoadDataFail:error];
+    if (error.code == YLAPIManagerResponseStatusTokenExpired) {
+        [[YLTokenRefresher sharedInstance] needRefresh];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+            [self waitForDependency];
+            // 重启访问
+            self.requestIdMap[@(error.requestId)] = @([self loadData]);
+        });
+        return;
     }
-    [self afterPerformFailWithResponseModel:error];
+    
+    if ([self beforePerformFailWithResponseError:error]) {
+        [self.requestIdMap removeObjectForKey:@(error.requestId)];
+        if ([self.delegate respondsToSelector:@selector(apiManager:loadDataFail:)]) {
+            [self.delegate apiManager:self loadDataFail:error];
+        }
+        [self afterPerformFailWithResponseError:error];
+    }
+    
 }
 
 
 #pragma mark - public API
 - (void)cancelAllRequests {
-    [[YLAPIProxy sharedInstance] cancelRequestWithRequestIdList:self.requestIdList];
-    [self.requestIdList removeAllObjects];
+    [[YLAPIProxy sharedInstance] cancelRequestWithRequestIdList:self.requestIdMap.allValues];
+    [self.requestIdMap removeAllObjects];
 }
 
-- (void)cancelRequestWithRequestId:(NSInteger)requestID {
-    [self removeRequestIdWithRequestId:requestID];
-    [[YLAPIProxy sharedInstance] cancelRequestWithRequestId:@(requestID)];
+- (void)cancelRequestWithRequestId:(NSInteger)requestId {
+    NSNumber *realRequstId = self.requestIdMap[@(requestId)];
+    [self.requestIdMap removeObjectForKey:@(requestId)];
+    [[YLAPIProxy sharedInstance] cancelRequestWithRequestId:realRequstId];
 }
 
 - (id)fetchData {
@@ -268,7 +292,7 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
 
 #pragma mark - private API
 
-// 有可能卡死线程，需异步使用此方法
+// 有可能卡死线程，需异步调用此方法
 - (void)waitForDependency {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         for (YLBaseAPIManager *apiManager in self.dependencySet) {
@@ -279,18 +303,6 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
             dispatch_semaphore_signal(apiManager.continueMutex);
         }
     });
-}
-
-- (void)removeRequestIdWithRequestId:(NSInteger)requestId {
-    NSNumber *requestIdToRemove = nil;
-    for (NSNumber *storedRequestId in self.requestIdList) {
-        if ([storedRequestId integerValue] == requestId) {
-            requestIdToRemove = storedRequestId;
-        }
-    }
-    if (requestIdToRemove) {
-        [self.requestIdList removeObject:requestIdToRemove];
-    }
 }
 
 - (NSDictionary *)reformParams:(NSDictionary *)params {
@@ -346,6 +358,8 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
             return YLResponseErrorWithMSG(@"请求超时");
         case YLAPIManagerResponseStatusNoNetwork:
             return YLResponseErrorWithMSG(@"当前网络已断开");
+        case YLAPIManagerResponseStatusTokenExpired:
+            return YLResponseErrorWithMSG(@"token已过期");
         case YLAPIManagerResponseStatusNeedLogin:
             return YLResponseErrorWithMSG(@"请登录");
         case YLAPIManagerResponseStatusRequestError:
@@ -375,18 +389,18 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
     }
 }
 
-- (BOOL)beforePerformFailWithResponseModel:(YLResponseError *)responseModel {
+- (BOOL)beforePerformFailWithResponseError:(YLResponseError *)error {
     BOOL result = YES;
     if (self != self.interceptor
-        && [self.interceptor respondsToSelector:@selector(apiManager:beforePerformFailWithResponseModel:)]) {
-        result = [self.interceptor apiManager:self beforePerformFailWithResponseModel:responseModel];
+        && [self.interceptor respondsToSelector:@selector(apiManager:beforePerformFailWithResponseError:)]) {
+        result = [self.interceptor apiManager:self beforePerformFailWithResponseError:error];
     }
     return result;
 }
-- (void)afterPerformFailWithResponseModel:(YLResponseError *)responseModel {
+- (void)afterPerformFailWithResponseError:(YLResponseError *)error {
     if (self != self.interceptor
-        && [self.interceptor respondsToSelector:@selector(apiManager:afterPerformFailWithResponseModel:)]) {
-        [self.interceptor apiManager:self afterPerformFailWithResponseModel:responseModel];
+        && [self.interceptor respondsToSelector:@selector(apiManager:afterPerformFailWithResponseError:)]) {
+        [self.interceptor apiManager:self afterPerformFailWithResponseError:error];
     }
 }
 

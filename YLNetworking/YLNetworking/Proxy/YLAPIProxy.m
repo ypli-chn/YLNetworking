@@ -94,41 +94,42 @@
     
     dataTask = [self.sessionManager dataTaskWithRequest:request
                                       completionHandler:^(NSURLResponse * _Nonnull response, id  _Nullable responseObject, NSError * _Nullable error) {
-        NSNumber *requestID = @([dataTask taskIdentifier]);
-        [self.dispatchTable removeObjectForKey:requestID];
-        NSData *responseData = nil;
-        if ([responseObject isKindOfClass:[NSData class]]) {
-            responseData = responseObject;
-        }
-        if (error) {
-            [YLNetworkingLogger logError:error.description];
-            if (error.code == NSURLErrorTimedOut) {
-                fail?fail(YLResponseError(@"网络超时",YLResponseStatusErrorTimeout,[requestID integerValue])):nil;
-            } else {
-                fail?fail(YLResponseError(@"网络错误",YLResponseStatusErrorUnknown,[requestID integerValue])):nil;
-            }
-        } else {
-            NSString *responseString = nil;
-            if (responseData != nil) {
-                responseString = [[NSString alloc] initWithData:responseData
-                                                       encoding:NSUTF8StringEncoding];;
-            }
-            [YLNetworkingLogger logResponseWithRequest:request path:request.URL.absoluteString params:request.yl_requestParams response:responseString];
-            
-            YLResponseModel *responseModel =
-            [[YLResponseModel alloc] initWithResponseString:responseString
-                                                  requestId:[requestID integerValue]
-                                                    request:request
-                                               responseData:responseData
-                                                     status:YLResponseStatusSuccess];
-            success?success(responseModel):nil;
-        }
-    }];
+                                          NSNumber *requestID = @([dataTask taskIdentifier]);
+                                          [self.dispatchTable removeObjectForKey:requestID];
+                                          NSData *responseData = nil;
+                                          if ([responseObject isKindOfClass:[NSData class]]) {
+                                              responseData = responseObject;
+                                          }
+                                          if (error) {
+                                              [YLNetworkingLogger logError:error.description];
+                                              if (error.code == NSURLErrorTimedOut) {
+                                                  fail?fail(YLResponseError(@"网络超时",YLResponseStatusErrorTimeout,[requestID integerValue])):nil;
+                                              } else {
+                                                  fail?fail(YLResponseError(@"网络错误",YLResponseStatusErrorUnknown,[requestID integerValue])):nil;
+                                              }
+                                          } else {
+                                              NSString *responseString = nil;
+                                              if (responseData != nil) {
+                                                  responseString = [[NSString alloc] initWithData:responseData
+                                                                                         encoding:NSUTF8StringEncoding];;
+                                              }
+                                              [YLNetworkingLogger logResponseWithRequest:request path:request.URL.absoluteString params:request.yl_requestParams response:responseString];
+                                              
+                                              YLResponseModel *responseModel =
+                                              [[YLResponseModel alloc] initWithResponseString:responseString
+                                                                                    requestId:[requestID integerValue]
+                                                                                      request:request
+                                                                                     response:response
+                                                                                 responseData:responseData
+                                                                                       status:YLResponseStatusSuccess];
+                                              success?success(responseModel):nil;
+                                          }
+                                      }];
     
     NSNumber *requestId = @([dataTask taskIdentifier]);
     self.dispatchTable[requestId] = dataTask;
-//  此处只建立Task，但是不进行resume，为添加依赖方便
-//    [dataTask resume];
+    //  此处只建立Task，但是不进行resume，为添加依赖方便
+    //    [dataTask resume];
     
     return requestId;
 }
@@ -154,8 +155,8 @@
     if (_sessionManager == nil) {
         _sessionManager = [AFHTTPSessionManager manager];
         _sessionManager.responseSerializer = [AFHTTPResponseSerializer serializer];
-//        _sessionManager.securityPolicy.allowInvalidCertificates = YES;
-//        _sessionManager.securityPolicy.validatesDomainName = NO;
+        //        _sessionManager.securityPolicy.allowInvalidCertificates = YES;
+        //        _sessionManager.securityPolicy.validatesDomainName = NO;
     }
     return _sessionManager;
 }
@@ -175,8 +176,8 @@
         [YLNetworkingLogger logError:@"[YLAPIProxy]未知请求方法"];
         return nil;
     }
-
-    AFJSONRequestSerializer *serializer = [AFJSONRequestSerializer serializer];
+    
+    AFHTTPRequestSerializer *serializer = useJSON?[AFJSONRequestSerializer serializer]:[AFHTTPRequestSerializer serializer];
     serializer.timeoutInterval = kYLNetworkingTimeoutSeconds;
     NSURLRequest *request = [serializer requestWithMethod:method
                                                 URLString:urlString

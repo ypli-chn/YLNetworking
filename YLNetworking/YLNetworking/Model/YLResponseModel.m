@@ -31,7 +31,7 @@ NSString * const YLNetworkingResponseErrorKey = @"xyz.ypli.error.responsee";
                             requestId:(NSInteger)requestId {
     return [[self alloc] initWithMessage:message code:code requestId:requestId];
 }
-#pragma mark - 
+#pragma mark -
 - (NSString *)message {
     return [self localizedDescription];
 }
@@ -45,12 +45,14 @@ NSString * const YLNetworkingResponseErrorKey = @"xyz.ypli.error.responsee";
 - (instancetype)initWithResponseString:(NSString *)responseString
                              requestId:(NSInteger)requestId
                                request:(NSURLRequest *)request
+                              response:(NSURLResponse *)response
                           responseData:(NSData *)responseData
                                 status:(YLResponseStatus)status {
     self = [super init];
     if (self) {
         _contentString = responseString;
         _requestId = requestId;
+        _response = response;
         _responseData = responseData;
         _request = request;
         _requestParams = request.yl_requestParams;
@@ -79,7 +81,7 @@ NSString * const YLNetworkingResponseErrorKey = @"xyz.ypli.error.responsee";
     // 这里保留UserId以防止不同用户的脏数据
     [keys enumerateObjectsUsingBlock:^(NSString * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         if (![obj isEqualToString:kYLAuthParamsKeyUserId]) {
-             [dict removeObjectForKey:obj];
+            [dict removeObjectForKey:obj];
         }
     }];
     return [dict copy];
