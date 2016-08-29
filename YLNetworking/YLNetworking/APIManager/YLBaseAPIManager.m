@@ -12,6 +12,8 @@
 #import "YLCacheProxy.h"
 #import "YLAuthParamsGenerator.h"
 #import "YLTokenRefresher.h"
+
+#import <libkern/OSAtomic.h>
 NSString * const kYLAPIBaseManagerRequestId = @"xyz.ypli.kYLAPIBaseManagerRequestID";
 
 #define YLLoadRequest(REQUEST_METHOD, REQUEST_ID)                                                  \
@@ -36,8 +38,8 @@ self.requestIdMap[@(REQUEST_ID)]= @(REQUEST_ID);\
 @property (nonatomic, strong) NSMutableSet *dependencySet;
 
 
-// 此Map默认是 key -> value : requestId -> requsetId
-// 但是在重新访问时，需重新发起访问，此时原requsetId会对应新的requestId
+// 业务层得到的requestId 与 APIProxy得到的requsetId是不同的，这里即保存着他们的对应关系
+// 之所以这么设计是为了在网络层重新发起请求的时候，让业务层是不可感知。
 @property (nonatomic, strong) NSMutableDictionary *requestIdMap;
 
 @property (nonatomic, weak) YLBaseAPIManager<YLAPIManager>* child;
@@ -115,9 +117,27 @@ self.requestIdMap[@(REQUEST_ID)]= @(REQUEST_ID);\
 }
 
 - (NSInteger)loadData {
-    NSDictionary *params = [self.dataSource paramsForAPI:self];
-    NSInteger requestId = [self loadDataWithParams:params];
-    return requestId;
+    
+    if (self.child.isAuth) {
+        // 在此给所有的需要认证信息的APIManager添加对YLTokenRefresher的依赖，利用AOP的形式用户无感知地刷新Token
+        // 由于采用的是NSMutableSet，也无需担心重复添加的问题
+        // 再者不用使用dispatch_once，以防止某些情况譬如动态更新时改掉isAuth时，无法正确添加依赖关系
+        [self addDependency:[YLTokenRefresher sharedInstance]];
+    }
+    
+    static NSInteger requestIndex = 0;
+    static OSSpinLock requestIdLock = OS_SPINLOCK_INIT;
+    OSSpinLockLock(&requestIdLock);
+    requestIndex++;
+    NSInteger openRequestId = requestIndex;
+    OSSpinLockUnlock(&requestIdLock);
+    
+    [self waitForDependency:^{
+        NSDictionary *params = [self.dataSource paramsForAPI:self];
+        NSInteger requestId = [self loadDataWithParams:params];
+        self.requestIdMap[@(openRequestId)] = @(requestId);
+    }];
+    return openRequestId;
 }
 
 // 不将此方法开放出去是为了强制使用dataSource来提供数据，类同UITableView
@@ -139,9 +159,6 @@ self.requestIdMap[@(REQUEST_ID)]= @(REQUEST_ID);\
         }
     }
     
-//  在此给所有的APIManager添加对YLTokenRefresher的依赖，利用AOP的形式用户无感知地刷新Token
-    [self addDependency:[YLTokenRefresher sharedInstance]];
-    
     if ([self shouldLoadRequestWithParams:finalAPIParams]) {
         if ([self shouldCache] && [self tryLoadResponseFromCacheWithParams:finalAPIParams]) {
             return 0;
@@ -160,16 +177,9 @@ self.requestIdMap[@(REQUEST_ID)]= @(REQUEST_ID);\
                     break;
             }
             
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-                [self waitForDependency];
-                // 在此resume
-                [[YLAPIProxy sharedInstance] resumeRequestWithRequestId:@(requestId)];
-                
-                NSMutableDictionary *params = [finalAPIParams mutableCopy];
-                params[kYLAPIBaseManagerRequestId] = @(requestId);
-                [self afterLoadRequestWithParams:params];
-            });
-            
+            NSMutableDictionary *params = [finalAPIParams mutableCopy];
+            params[kYLAPIBaseManagerRequestId] = @(requestId);
+            [self afterLoadRequestWithParams:params];
             return requestId;
         } else {
             [self dataLoadFailed:
@@ -236,13 +246,23 @@ self.requestIdMap[@(REQUEST_ID)]= @(REQUEST_ID);\
 }
 
 - (void)dataLoadFailed:(YLResponseError *)error {
+    // 将requestId更改为对外的requestId
+    __block NSInteger openRequestId = 0;
+    [self.requestIdMap enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
+        if ([obj integerValue] == error.requestId) {
+            openRequestId = [key integerValue];
+        }
+    }];
+    error = YLResponseError(error.message, error.code, openRequestId);
+    
+    
     if (error.code == YLAPIManagerResponseStatusTokenExpired) {
         [[YLTokenRefresher sharedInstance] needRefresh];
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-            [self waitForDependency];
+        
+        [self waitForDependency:^{
             // 重启访问
             self.requestIdMap[@(error.requestId)] = @([self loadData]);
-        });
+        }];
         return;
     }
     
@@ -292,15 +312,19 @@ self.requestIdMap[@(REQUEST_ID)]= @(REQUEST_ID);\
 
 #pragma mark - private API
 
-// 有可能卡死线程，需异步调用此方法
-- (void)waitForDependency {
-    for (YLBaseAPIManager *apiManager in self.dependencySet) {
-        NSLog(@"wait %@",apiManager);
-        dispatch_semaphore_wait(apiManager.continueMutex, DISPATCH_TIME_FOREVER);
-        // 得到后立刻释放，防止其他请求无法进行
-        NSLog(@"%@ Done",apiManager);
-        dispatch_semaphore_signal(apiManager.continueMutex);
-    }
+- (void)waitForDependency:(dispatch_block_t)block {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        for (YLBaseAPIManager *apiManager in self.dependencySet) {
+            NSLog(@"%@ wait %@",self, apiManager);
+            dispatch_semaphore_wait(apiManager.continueMutex, DISPATCH_TIME_FOREVER);
+            // 得到后立刻释放，防止其他请求无法进行
+            NSLog(@"%@ Done",apiManager);
+            dispatch_semaphore_signal(apiManager.continueMutex);
+        }
+        if(block) {
+            block();
+        }
+    });
 }
 
 - (NSDictionary *)reformParams:(NSDictionary *)params {
@@ -326,15 +350,10 @@ self.requestIdMap[@(REQUEST_ID)]= @(REQUEST_ID);\
         return NO;
     }
     
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-        [self waitForDependency];
-
-        // 必须等return之后调用加载完毕才有效
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            dispatch_async(dispatch_get_main_queue(), ^{
-                YLResponseModel *responseModel = [[YLResponseModel alloc] initWithData:cache];
-                [self dataDidLoad:responseModel];
-            });
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            YLResponseModel *responseModel = [[YLResponseModel alloc] initWithData:cache];
+            [self dataDidLoad:responseModel];
         });
     });
     

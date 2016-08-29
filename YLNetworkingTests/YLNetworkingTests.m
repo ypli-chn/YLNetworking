@@ -52,9 +52,6 @@
     self.apiManagerSecond.dataSource = self;
     self.apiManagerSecond.delegate = self;
     
-    UserAPIManager *apiManagerSecond = [[UserAPIManager alloc] init];
-    apiManagerFirst.dataSource = self;
-    
     [self.apiManagerSecond addDependency:self.apiManagerFirst];
     [self.apiManagerSecond loadNextPage];
     [self.apiManagerFirst loadNextPage];

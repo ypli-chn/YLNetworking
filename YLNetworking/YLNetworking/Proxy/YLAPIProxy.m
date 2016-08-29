@@ -65,15 +65,6 @@
     return [requestId integerValue];
 }
 
-- (void)resumeRequestWithRequestId:(NSNumber *)requestId {
-    NSURLSessionDataTask *requestTask = self.dispatchTable[requestId];
-    if (requestTask.state == NSURLSessionTaskStateSuspended) {
-        // 只执行被挂起的请求
-        [requestTask resume];
-    }
-}
-
-
 - (void)cancelRequestWithRequestId:(NSNumber *)requestId {
     NSURLSessionDataTask *requestTask = self.dispatchTable[requestId];
     [requestTask cancel];
@@ -128,8 +119,7 @@
     
     NSNumber *requestId = @([dataTask taskIdentifier]);
     self.dispatchTable[requestId] = dataTask;
-    //  此处只建立Task，但是不进行resume，为添加依赖方便
-    //    [dataTask resume];
+    [dataTask resume];
     
     return requestId;
 }

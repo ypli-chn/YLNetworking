@@ -41,8 +41,6 @@ typedef void(^YLAPIProxyFail)(YLResponseError *error);
                   success:(YLAPIProxySuccess)success
                      fail:(YLAPIProxyFail)fail;
 
-- (void)resumeRequestWithRequestId:(NSNumber *)requestID;
-
 - (void)cancelRequestWithRequestId:(NSNumber *)requestID;
 - (void)cancelRequestWithRequestIdList:(NSArray *)requestIdList;
 @end
