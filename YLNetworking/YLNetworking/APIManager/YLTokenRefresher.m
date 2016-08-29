@@ -32,6 +32,7 @@
 }
 
 - (BOOL)isAuth {
+    // 这里一定是NO，否则会让TokenRefresher依赖自己从而产生死锁
     return NO;
 }
 
