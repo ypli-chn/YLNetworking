@@ -29,6 +29,14 @@ REQUEST_ID = [[YLAPIProxy sharedInstance] load##REQUEST_METHOD##WithParams:final
 self.requestIdMap[@(REQUEST_ID)]= @(REQUEST_ID);\
 }\
 
+
+static void thread_safe_execute(dispatch_block_t block) {
+    static OSSpinLock yl_networking_lock = OS_SPINLOCK_INIT;
+    OSSpinLockLock(&yl_networking_lock);
+    block();
+    OSSpinLockUnlock(&yl_networking_lock);
+}
+
 @interface YLBaseAPIManager()
 @property (nonatomic, assign, readonly) NSUInteger createTime;
 @property (nonatomic, strong, readwrite) id rawData;
@@ -108,12 +116,15 @@ self.requestIdMap[@(REQUEST_ID)]= @(REQUEST_ID);\
     // 此处用NSMutableSet而没用NSHash​Table
     // 是由于此处必须是强引用，以防止在此apiManager请求前，所依赖的apiManager被释放，而导致无法判断依赖的apiManager是否完成
     // 此处会导致被依赖的apiManager只能等待所有产生该依赖的apiManager被释放完后才能释放。
-    
-    [self.dependencySet addObject:apiManager];
+    thread_safe_execute(^{
+        [self.dependencySet addObject:apiManager];
+    });
 }
 
 - (void)removeDependency:(YLBaseAPIManager *)apiManager {
-    [self.dependencySet removeObject:apiManager];
+    thread_safe_execute(^{
+        [self.dependencySet removeObject:apiManager];
+    });
 }
 
 - (NSInteger)loadData {
@@ -126,11 +137,12 @@ self.requestIdMap[@(REQUEST_ID)]= @(REQUEST_ID);\
     }
     
     static NSInteger requestIndex = 0;
-    static OSSpinLock requestIdLock = OS_SPINLOCK_INIT;
-    OSSpinLockLock(&requestIdLock);
-    requestIndex++;
-    NSInteger openRequestId = requestIndex;
-    OSSpinLockUnlock(&requestIdLock);
+    
+    __block NSInteger openRequestId;
+    thread_safe_execute(^{
+        requestIndex++;
+        openRequestId = requestIndex;
+    });
     
     [self waitForDependency:^{
         NSDictionary *params = [self.dataSource paramsForAPI:self];
