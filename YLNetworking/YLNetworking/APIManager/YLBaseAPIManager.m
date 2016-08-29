@@ -294,15 +294,13 @@ self.requestIdMap[@(REQUEST_ID)]= @(REQUEST_ID);\
 
 // 有可能卡死线程，需异步调用此方法
 - (void)waitForDependency {
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-        for (YLBaseAPIManager *apiManager in self.dependencySet) {
-            NSLog(@"wait %@",apiManager);
-            dispatch_semaphore_wait(apiManager.continueMutex, DISPATCH_TIME_FOREVER);
-            // 得到后立刻释放，防止其他请求无法进行
-            NSLog(@"%@ Done",apiManager);
-            dispatch_semaphore_signal(apiManager.continueMutex);
-        }
-    });
+    for (YLBaseAPIManager *apiManager in self.dependencySet) {
+        NSLog(@"wait %@",apiManager);
+        dispatch_semaphore_wait(apiManager.continueMutex, DISPATCH_TIME_FOREVER);
+        // 得到后立刻释放，防止其他请求无法进行
+        NSLog(@"%@ Done",apiManager);
+        dispatch_semaphore_signal(apiManager.continueMutex);
+    }
 }
 
 - (NSDictionary *)reformParams:(NSDictionary *)params {

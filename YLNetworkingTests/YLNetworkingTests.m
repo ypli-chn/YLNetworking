@@ -48,17 +48,16 @@
     self.apiManagerFirst.dataSource = self;
     self.apiManagerFirst.delegate = self;
     
-//    self.apiManagerSecond = [[UserAPIManager alloc] init];
-//    self.apiManagerSecond.dataSource = self;
-//    self.apiManagerSecond.delegate = self;
-//    
-//    UserAPIManager *apiManagerSecond = [[UserAPIManager alloc] init];
-//    apiManagerFirst.dataSource = self;
+    self.apiManagerSecond = [[UserAPIManager alloc] init];
+    self.apiManagerSecond.dataSource = self;
+    self.apiManagerSecond.delegate = self;
     
-//    [self.apiManagerSecond addDependency:self.apiManagerFirst];
-//    [self.apiManagerSecond loadNextPage];
+    UserAPIManager *apiManagerSecond = [[UserAPIManager alloc] init];
+    apiManagerFirst.dataSource = self;
+    
+    [self.apiManagerSecond addDependency:self.apiManagerFirst];
+    [self.apiManagerSecond loadNextPage];
     [self.apiManagerFirst loadNextPage];
-//    sleep(10);
     
     [self waitForExpectationsWithTimeout:20 handler:nil];
     
@@ -67,11 +66,9 @@
 - (void)apiManagerLoadDataSuccess:(YLBaseAPIManager *)manager {
     if (manager == self.apiManagerFirst) {
         NSLog(@"apiManagerFirst Done");
-//        [expectation fulfill];
-        
     } else if(manager == self.apiManagerSecond) {
         NSLog(@"apiManagerSecond Done");
-        
+        [expectation fulfill];
     }
 }
 
