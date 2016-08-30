@@ -66,6 +66,7 @@
 }
 
 - (void)cancelRequestWithRequestId:(NSNumber *)requestId {
+    if(requestId) return;
     NSURLSessionDataTask *requestTask = self.dispatchTable[requestId];
     [requestTask cancel];
     [self.dispatchTable removeObjectForKey:requestId];

@@ -42,7 +42,6 @@ static void thread_safe_execute(dispatch_block_t block) {
 @property (nonatomic, strong, readwrite) id rawData;
 @property (nonatomic, assign, readwrite) BOOL isLoading;
 @property (nonatomic, assign) BOOL isNativeDataEmpty;
-//@property (nonatomic, strong) NSMutableArray *requestIdList;
 @property (nonatomic, strong) NSMutableSet *dependencySet;
 
 
@@ -52,7 +51,6 @@ static void thread_safe_execute(dispatch_block_t block) {
 
 @property (nonatomic, weak) YLBaseAPIManager<YLAPIManager>* child;
 
-//@property (nonatomic) dispatch_semaphore_t continueMutex;
 @end
 @implementation YLBaseAPIManager
 
@@ -64,6 +62,7 @@ static void thread_safe_execute(dispatch_block_t block) {
             _createTime = (NSUInteger)[NSDate timeIntervalSinceReferenceDate];
             _continueMutex = dispatch_semaphore_create(0);
             _dependencySet = [NSMutableSet set];
+            _requestIdMap = [NSMutableDictionary dictionary];
         } else {
             @throw [NSException exceptionWithName:[NSString stringWithFormat:@"%@ init failed",[self class]]
                                            reason:@"Subclass of YLAPIBaseManager should implement <YLAPIManager>"
@@ -113,6 +112,7 @@ static void thread_safe_execute(dispatch_block_t block) {
 }
 
 - (void)addDependency:(YLBaseAPIManager *)apiManager {
+    if(apiManager == nil) return;
     // 此处用NSMutableSet而没用NSHash​Table
     // 是由于此处必须是强引用，以防止在此apiManager请求前，所依赖的apiManager被释放，而导致无法判断依赖的apiManager是否完成
     // 此处会导致被依赖的apiManager只能等待所有产生该依赖的apiManager被释放完后才能释放。
@@ -122,6 +122,7 @@ static void thread_safe_execute(dispatch_block_t block) {
 }
 
 - (void)removeDependency:(YLBaseAPIManager *)apiManager {
+    if(apiManager == nil) return;
     thread_safe_execute(^{
         [self.dependencySet removeObject:apiManager];
     });
