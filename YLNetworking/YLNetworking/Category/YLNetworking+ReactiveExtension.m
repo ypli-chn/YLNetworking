@@ -152,3 +152,54 @@
 }
 @end
 
+
+@interface RACCommand (_YLExtension)
+@property (nonatomic, assign) NSTimeInterval yl_timestamp;
+@end
+@implementation RACCommand (YLExtension)
++ (void)load {
+    Class clazz = [RACCommand class];
+    Method originalMethod = class_getInstanceMethod(clazz, @selector(execute:));
+    Method swizzledMethod = class_getInstanceMethod(clazz, @selector(yl_execute:));
+    
+    BOOL didAddMethod =
+    class_addMethod(clazz,
+                    @selector(execute:),
+                    method_getImplementation(swizzledMethod),
+                    method_getTypeEncoding(swizzledMethod));
+    
+    if (didAddMethod) {
+        class_replaceMethod(clazz,
+                            @selector(yl_execute:),
+                            method_getImplementation(originalMethod),
+                            method_getTypeEncoding(originalMethod));
+        
+    } else {
+        method_exchangeImplementations(originalMethod, swizzledMethod);
+    }
+}
+
+- (RACSignal *)yl_execute:(id)input {
+    self.yl_timestamp = [NSDate timeIntervalSinceReferenceDate];
+    return [self yl_execute:input];
+}
+
+- (NSTimeInterval)yl_timestamp {
+    return [objc_getAssociatedObject(self, @selector(yl_timestamp)) doubleValue];
+}
+
+- (void)setYl_timestamp:(NSTimeInterval)timestamp {
+    objc_setAssociatedObject(self, @selector(yl_timestamp), @(timestamp), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (void)setNeedExecuteIntervalLongerThan:(NSInteger)seconds {
+    NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+    if (now - self.yl_timestamp > seconds) {
+        [self execute:nil];
+    }
+}
+@end
+
+
+
+
