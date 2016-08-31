@@ -56,7 +56,7 @@
 
 @interface RACCommand (YLExtension)
 // 尝试execute，但是需要与上次执行的间隔大于seconds才会执行
-- (void)setNeedExecuteIntervalLongerThan:(NSInteger)seconds;
+- (void)tryExecuteIntervalLongerThan:(NSInteger)seconds;
 @end
 
 

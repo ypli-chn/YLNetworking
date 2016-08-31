@@ -192,7 +192,7 @@
     objc_setAssociatedObject(self, @selector(yl_timestamp), @(timestamp), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (void)setNeedExecuteIntervalLongerThan:(NSInteger)seconds {
+- (void)tryExecuteIntervalLongerThan:(NSInteger)seconds {
     NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
     if (now - self.yl_timestamp > seconds) {
         [self execute:nil];
