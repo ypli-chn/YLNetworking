@@ -13,10 +13,14 @@
 #import "YLNetworkingLogger.h"
 #import "YLNetworkingConfiguration.h"
 
-static NSString * const  kYLNetworkingCacheObjctKey = @"xyz.ypli.kYLNetworkingCacheObjctKey";
-static NSString * const  kYLNetworkingCacheDefault = @"xyz.ypli.kYLNetworkingCache.default";
+static NSString * const  kYLNetworkingCacheKeyCacheData = @"xyz.ypli.kYLNetworkingCacheKeyCacheData";
+static NSString * const  kYLNetworkingCacheKeyCacheTime = @"xyz.ypli.kYLNetworkingCacheKeyCacheTime";
+static NSString * const  kYLNetworkingCacheKeyCacheAgeLength = @"xyz.ypli.kYLNetworkingCacheKeyCacheAgeLength";
+
+static NSString * const  kYLNetworkingCache = @"xyz.ypli.kYLNetworkingCache";
+
 @interface YLCacheProxy()
-@property (nonatomic, strong) YYCache *defaultCache;
+@property (nonatomic, strong) YYCache *cache;
 @end
 @implementation YLCacheProxy
 
@@ -36,22 +40,29 @@ static NSString * const  kYLNetworkingCacheDefault = @"xyz.ypli.kYLNetworkingCac
 }
 
 - (NSData *)cacheForKey:(NSString *)key {
-    id cache = [self.defaultCache objectForKey:key];
-    if (cache == nil) {
-        NSString *basePath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,NSUserDomainMask, YES) firstObject];
-        YYCache *cacheFile = [[YYCache alloc] initWithPath:[basePath stringByAppendingPathComponent:key]];
-        cache = [cacheFile objectForKey:kYLNetworkingCacheObjctKey];
+    NSDictionary *cacheDict = [self.cache objectForKey:key];
+    
+    NSData *cacheData = cacheDict[kYLNetworkingCacheKeyCacheData];
+    NSTimeInterval cacheTime = [cacheDict[kYLNetworkingCacheKeyCacheTime] doubleValue];
+    NSInteger cacheAgeLength = [cacheDict[kYLNetworkingCacheKeyCacheAgeLength] integerValue];
+    
+    NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+    if (now - cacheTime > cacheAgeLength) {
+        [YLNetworkingLogger logInfo:@"已过期" label:@"Cache"];
+        [self.cache removeObjectForKey:key];
+        return nil;
+    } else {
+        if ([cacheData isKindOfClass:[NSData class]]) {
+            NSString *log =[NSString stringWithFormat:@"读取缓存:\n%@",[[NSString alloc] initWithData:cacheData encoding:NSUTF8StringEncoding]];
+            [YLNetworkingLogger logInfo:log label:@"Cache"];
+            return cacheData;
+        } else {
+            NSString *log = [NSString stringWithFormat:@"Return nil because cache data(%@) is NOT kind of NSData.",[cacheData class]];
+            [YLNetworkingLogger logError:log];
+            return nil;
+        }
     }
     
-    if ([cache isKindOfClass:[NSData class]]) {
-        NSString *log =[NSString stringWithFormat:@"读取缓存:\n%@",[[NSString alloc] initWithData:cache encoding:NSUTF8StringEncoding]];
-        [YLNetworkingLogger logInfo:log label:@"Cache"];
-        return cache;
-    } else {
-        NSString *log = [NSString stringWithFormat:@"Return nil because cache data(%@) is NOT kind of NSData.",[cache class]];
-        [YLNetworkingLogger logError:log];
-        return nil;
-    }
 }
 
 
@@ -67,33 +78,32 @@ static NSString * const  kYLNetworkingCacheDefault = @"xyz.ypli.kYLNetworkingCac
 }
 
 - (void)setCacheData:(NSData *)data forKey:(NSString *)key withExpirationTime:(NSTimeInterval)length {
+    if (data == nil) {
+        return;
+    }
     if ([data isKindOfClass:[NSData class]]) {
-        if (length == kYLCacheExpirationTimeDefault) {
-            [self.defaultCache setObject:data forKey:key];
-            return;
-        } else {
-            // 确保从默认中删除之前的缓存
-            [self.defaultCache removeObjectForKey:key];
-        }
-        NSString *basePath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,NSUserDomainMask, YES) firstObject];
-        YYCache *cache = [[YYCache alloc] initWithPath:[basePath stringByAppendingPathComponent:key]];
-        cache.diskCache.ageLimit = length;
-        [cache setObject:data forKey:kYLNetworkingCacheObjctKey];
+        NSDictionary *cacheDict =
+        @{
+          kYLNetworkingCacheKeyCacheData: data,
+          kYLNetworkingCacheKeyCacheTime: @([NSDate timeIntervalSinceReferenceDate]),
+          kYLNetworkingCacheKeyCacheAgeLength : @(length),
+          };
+        
+        [self.cache setObject:cacheDict forKey:key];
         
         NSString *log =[NSString stringWithFormat:@"写入缓存:\n %@",[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]];
         [YLNetworkingLogger logInfo:log label:@"Cache"];
     } else {
         [YLNetworkingLogger logError:
-        [NSString stringWithFormat:@"Cache data(%@) is NOT kind of NSData",[data class]]];
+         [NSString stringWithFormat:@"Cache data(%@) is NOT kind of NSData",[data class]]];
     }
 }
 
-
-- (YYCache *)defaultCache {
-    if (_defaultCache == nil) {
-        _defaultCache = [[YYCache alloc] initWithName:kYLNetworkingCacheDefault];
-        _defaultCache.diskCache.ageLimit = kYLCacheExpirationTimeDefault;
+- (YYCache *)cache {
+    if (_cache == nil) {
+        _cache = [[YYCache alloc] initWithName:kYLNetworkingCache];
+        _cache.memoryCache.shouldRemoveAllObjectsWhenEnteringBackground = YES;
     }
-    return _defaultCache;
+    return _cache;
 }
 @end

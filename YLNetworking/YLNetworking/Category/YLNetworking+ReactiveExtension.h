@@ -8,7 +8,10 @@
 
 #import "YLBaseAPIManager.h"
 #import "YLPageAPIManager.h"
+#import "NSMapTable+YLNetworking.h"
 #import <ReactiveCocoa/ReactiveCocoa.h>
+@protocol YLNetworkingRACOperationProtocol;
+typedef NSMapTable<NSString *,id<YLNetworkingRACOperationProtocol>> YLNetworkingRACTable;
 
 @protocol YLNetworkingRACOperationProtocol<NSObject>
 - (RACCommand *)requestCommand;
@@ -27,7 +30,7 @@
 @optional
 - (id<YLNetworkingRACOperationProtocol>)networkingRAC;
 // 定义枚举在这允许获取多个APIManager的RAC
-- (NSArray<id<YLNetworkingRACOperationProtocol>>*)networkingRACs;
+- (YLNetworkingRACTable *)networkingRACs;
 @end
 
 
@@ -51,14 +54,8 @@
 @property (nonatomic, strong, readonly) RACCommand *requestNextPageCommand;
 @end
 
-
-
-
 @interface RACCommand (YLExtension)
+@property (nonatomic, assign, setter=yl_setTimestamp:) NSTimeInterval yl_timestamp;
 // 尝试execute，但是需要与上次执行的间隔大于seconds才会执行
-- (void)tryExecuteIntervalLongerThan:(NSInteger)seconds;
+- (BOOL)tryExecuteIntervalLongerThan:(NSInteger)seconds;
 @end
-
-
-
-

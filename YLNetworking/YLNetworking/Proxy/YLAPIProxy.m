@@ -12,6 +12,7 @@
 #import "NSURLRequest+YLNetworking.h"
 #import "YLNetworkingLogger.h"
 #import "Foundation+YLNetworking.h"
+#import "Macros.h"
 
 @interface YLAPIProxy()
 @property (nonatomic, strong) NSMutableDictionary *dispatchTable;
@@ -66,7 +67,7 @@
 }
 
 - (void)cancelRequestWithRequestId:(NSNumber *)requestId {
-    if(requestId) return;
+    if (requestId == nil) return;
     NSURLSessionDataTask *requestTask = self.dispatchTable[requestId];
     [requestTask cancel];
     [self.dispatchTable removeObjectForKey:requestId];
@@ -94,7 +95,10 @@
                                           }
                                           if (error) {
                                               [YLNetworkingLogger logError:error.description];
-                                              if (error.code == NSURLErrorTimedOut) {
+                                              if (error.code == NSURLErrorCancelled) {
+                                                  // 若取消则不发送任何消息
+                                                  fail?fail(YLResponseError(@"取消访问",YLResponseStatusCancel,[requestID integerValue])):nil;
+                                              } else if (error.code == NSURLErrorTimedOut) {
                                                   fail?fail(YLResponseError(@"网络超时",YLResponseStatusErrorTimeout,[requestID integerValue])):nil;
                                               } else {
                                                   fail?fail(YLResponseError(@"网络错误",YLResponseStatusErrorUnknown,[requestID integerValue])):nil;
@@ -168,12 +172,19 @@
         return nil;
     }
     
-    AFHTTPRequestSerializer *serializer = useJSON?[AFJSONRequestSerializer serializer]:[AFHTTPRequestSerializer serializer];
+    AFHTTPRequestSerializer *serializer = useJSON?[AFJSONRequestSerializer serializer]
+    :[AFHTTPRequestSerializer serializer];
+    
     serializer.timeoutInterval = kYLNetworkingTimeoutSeconds;
-    NSURLRequest *request = [serializer requestWithMethod:method
-                                                URLString:urlString
-                                               parameters:params
-                                                    error:&error];
+    NSMutableURLRequest *request = [serializer requestWithMethod:method
+                                                       URLString:urlString
+                                                      parameters:params
+                                                           error:&error];
+    
+    //    [request setValue:@"3" forHTTPHeaderField:@"User-Id"];
+    //    [request setValue:@"3" forHTTPHeaderField:@"User-Token"];
+    //
+    // 自定义header
     
     request.yl_requestParams = params;
     
@@ -185,5 +196,7 @@
     [YLNetworkingLogger logDebugInfoWithRequest:request path:urlString isJSON:useJSON params:params requestType:method];
     return request;
 }
+
+
 @end
 

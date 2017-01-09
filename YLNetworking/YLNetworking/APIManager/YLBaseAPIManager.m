@@ -37,7 +37,10 @@ static void thread_safe_execute(dispatch_block_t block) {
     OSSpinLockUnlock(&yl_networking_lock);
 }
 
-@interface YLBaseAPIManager()
+@interface YLBaseAPIManager() {
+    BOOL forceUpdate;
+}
+
 @property (nonatomic, assign, readonly) NSUInteger createTime;
 @property (nonatomic, strong, readwrite) id rawData;
 @property (nonatomic, assign, readwrite) BOOL isLoading;
@@ -63,6 +66,7 @@ static void thread_safe_execute(dispatch_block_t block) {
             _continueMutex = dispatch_semaphore_create(0);
             _dependencySet = [NSMutableSet set];
             _requestIdMap = [NSMutableDictionary dictionary];
+            forceUpdate = NO;
         } else {
             @throw [NSException exceptionWithName:[NSString stringWithFormat:@"%@ init failed",[self class]]
                                            reason:@"Subclass of YLAPIBaseManager should implement <YLAPIManager>"
@@ -153,6 +157,12 @@ static void thread_safe_execute(dispatch_block_t block) {
     return openRequestId;
 }
 
+- (NSInteger)loadDataWithoutCache {
+    //    self.shouldCache = NO;
+    forceUpdate = YES;
+    return [self loadData];
+}
+
 // 不将此方法开放出去是为了强制使用dataSource来提供数据，类同UITableView
 - (NSInteger)loadDataWithParams:(NSDictionary *)params {
     NSInteger requestId = 0;
@@ -173,7 +183,7 @@ static void thread_safe_execute(dispatch_block_t block) {
     }
     
     if ([self shouldLoadRequestWithParams:finalAPIParams]) {
-        if ([self shouldCache] && [self tryLoadResponseFromCacheWithParams:finalAPIParams]) {
+        if (!forceUpdate && [self shouldCache] && [self tryLoadResponseFromCacheWithParams:finalAPIParams]) {
             return 0;
         }
     
@@ -217,9 +227,10 @@ static void thread_safe_execute(dispatch_block_t block) {
                                                              options:NSJSONReadingMutableLeaves
                                                                error:&error];
         if (error != nil) {
-            [self dataLoadFailed:
-             [YLBaseAPIManager errorWithRequestId:responseModel.requestId
-                                           status:YLAPIManagerResponseStatusParsingError]];
+            YLResponseError *error = [YLBaseAPIManager errorWithRequestId:responseModel.requestId
+                                                                   status:YLAPIManagerResponseStatusParsingError];
+            error.response = jsonDict;
+            [self dataLoadFailed:error];
             return;
         }
         
@@ -230,7 +241,7 @@ static void thread_safe_execute(dispatch_block_t block) {
 //            YLResponseError *error = [YLBaseAPIManager errorWithRequestId:responseModel.requestId
 //                                                                   status:status
 //                                                                    extra:jsonDict[@"message"]];
-//            
+//            error.response = jsonDict;
 //            [self dataLoadFailed:error];
 //            return;
 //        }
@@ -255,7 +266,7 @@ static void thread_safe_execute(dispatch_block_t block) {
          [YLBaseAPIManager errorWithRequestId:responseModel.requestId
                                        status:YLAPIManagerResponseStatusParsingError]];
     }
-    
+    forceUpdate = NO;
 }
 
 - (void)dataLoadFailed:(YLResponseError *)error {
@@ -266,8 +277,19 @@ static void thread_safe_execute(dispatch_block_t block) {
             openRequestId = [key integerValue];
         }
     }];
-    error = YLResponseError(error.message, error.code, openRequestId);
     
+    NSDictionary *response = error.response;
+    error = YLResponseError(error.message, error.code, openRequestId);
+    error.response = response;
+    
+    if(error.code == YLResponseStatusCancel) {
+        // 处理请求被取消
+        if([self.delegate respondsToSelector:@selector(apiManagerLoadDidCancel:)]) {
+            [self.delegate apiManagerLoadDidCancel:self];
+        }
+        [self afterPerformCancel];
+        return;
+    }
     
     if (error.code == YLAPIManagerResponseStatusTokenExpired) {
         [[YLTokenRefresher sharedInstance] needRefresh];
@@ -449,6 +471,14 @@ static void thread_safe_execute(dispatch_block_t block) {
         [self.interceptor apiManager:self afterLoadRequestWithParams:params];
     }
 }
+
+- (void)afterPerformCancel {
+    if (self != self.interceptor
+        && [self.interceptor respondsToSelector:@selector(afterPerformCancel:)]) {
+        [self.interceptor afterPerformCancel:self];
+    }
+}
+
 
 #pragma mark - 校验器
 // 这里不作实现，这样子类重写时，不需要调用super

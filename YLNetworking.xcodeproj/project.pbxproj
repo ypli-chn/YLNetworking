@@ -20,6 +20,8 @@
 		F2455EA21D52620E00C1AAE8 /* YLCacheProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = F2455EA11D52620E00C1AAE8 /* YLCacheProxy.m */; };
 		F2455EA51D5262BB00C1AAE8 /* YLSignatureGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = F2455EA41D5262BB00C1AAE8 /* YLSignatureGenerator.m */; };
 		F2455EA81D52652000C1AAE8 /* Foundation+YLNetworking.m in Sources */ = {isa = PBXBuildFile; fileRef = F2455EA71D52652000C1AAE8 /* Foundation+YLNetworking.m */; };
+		F25A80961D7B495400987FE7 /* NSMapTable+YLNetworking.m in Sources */ = {isa = PBXBuildFile; fileRef = F25A80951D7B495400987FE7 /* NSMapTable+YLNetworking.m */; };
+		F25A80991D7B4BA500987FE7 /* YLAPIManagerDict.m in Sources */ = {isa = PBXBuildFile; fileRef = F25A80981D7B4BA500987FE7 /* YLAPIManagerDict.m */; };
 		F26203D01D3D45020050E932 /* UserAPIManager.m in Sources */ = {isa = PBXBuildFile; fileRef = F26203CF1D3D45020050E932 /* UserAPIManager.m */; };
 		F26203D51D3D456D0050E932 /* UserItemModel.m in Sources */ = {isa = PBXBuildFile; fileRef = F26203D41D3D456D0050E932 /* UserItemModel.m */; };
 		F26203DA1D3D45870050E932 /* UserItemViewModel.m in Sources */ = {isa = PBXBuildFile; fileRef = F26203D71D3D45870050E932 /* UserItemViewModel.m */; };
@@ -76,6 +78,10 @@
 		F2455EA41D5262BB00C1AAE8 /* YLSignatureGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = YLSignatureGenerator.m; sourceTree = "<group>"; };
 		F2455EA61D52652000C1AAE8 /* Foundation+YLNetworking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Foundation+YLNetworking.h"; sourceTree = "<group>"; };
 		F2455EA71D52652000C1AAE8 /* Foundation+YLNetworking.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "Foundation+YLNetworking.m"; sourceTree = "<group>"; };
+		F25A80941D7B495400987FE7 /* NSMapTable+YLNetworking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSMapTable+YLNetworking.h"; sourceTree = "<group>"; };
+		F25A80951D7B495400987FE7 /* NSMapTable+YLNetworking.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSMapTable+YLNetworking.m"; sourceTree = "<group>"; };
+		F25A80971D7B4BA500987FE7 /* YLAPIManagerDict.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YLAPIManagerDict.h; sourceTree = "<group>"; };
+		F25A80981D7B4BA500987FE7 /* YLAPIManagerDict.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = YLAPIManagerDict.m; sourceTree = "<group>"; };
 		F26203CE1D3D45020050E932 /* UserAPIManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserAPIManager.h; sourceTree = "<group>"; };
 		F26203CF1D3D45020050E932 /* UserAPIManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UserAPIManager.m; sourceTree = "<group>"; };
 		F26203D31D3D456D0050E932 /* UserItemModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserItemModel.h; sourceTree = "<group>"; };
@@ -171,6 +177,8 @@
 				F2455E611D52395100C1AAE8 /* YLNetworking+ReactiveExtension.m */,
 				F2455EA61D52652000C1AAE8 /* Foundation+YLNetworking.h */,
 				F2455EA71D52652000C1AAE8 /* Foundation+YLNetworking.m */,
+				F25A80941D7B495400987FE7 /* NSMapTable+YLNetworking.h */,
+				F25A80951D7B495400987FE7 /* NSMapTable+YLNetworking.m */,
 			);
 			path = Category;
 			sourceTree = "<group>";
@@ -211,6 +219,8 @@
 			children = (
 				F2455E761D523AC700C1AAE8 /* YLNetworkingLogger.h */,
 				F2455E771D523AC700C1AAE8 /* YLNetworkingLogger.m */,
+				F25A80971D7B4BA500987FE7 /* YLAPIManagerDict.h */,
+				F25A80981D7B4BA500987FE7 /* YLAPIManagerDict.m */,
 			);
 			path = Tools;
 			sourceTree = "<group>";
@@ -491,6 +501,7 @@
 				F26203E31D3D45D50050E932 /* UserItemViewCell.m in Sources */,
 				F2E702601D36479500C6DAF7 /* AppDelegate.m in Sources */,
 				F2E7025D1D36479500C6DAF7 /* main.m in Sources */,
+				F25A80961D7B495400987FE7 /* NSMapTable+YLNetworking.m in Sources */,
 				F26203D51D3D456D0050E932 /* UserItemModel.m in Sources */,
 				F2455EA51D5262BB00C1AAE8 /* YLSignatureGenerator.m in Sources */,
 				F2455EA21D52620E00C1AAE8 /* YLCacheProxy.m in Sources */,
@@ -502,6 +513,7 @@
 				F2455E741D52395100C1AAE8 /* YLAPIProxy.m in Sources */,
 				F2455E721D52395100C1AAE8 /* YLAuthParamsGenerator.m in Sources */,
 				F26203DB1D3D45870050E932 /* UserListViewModel.m in Sources */,
+				F25A80991D7B4BA500987FE7 /* YLAPIManagerDict.m in Sources */,
 				F2455EA81D52652000C1AAE8 /* Foundation+YLNetworking.m in Sources */,
 				F2455E731D52395100C1AAE8 /* YLResponseModel.m in Sources */,
 				F26203DA1D3D45870050E932 /* UserItemViewModel.m in Sources */,

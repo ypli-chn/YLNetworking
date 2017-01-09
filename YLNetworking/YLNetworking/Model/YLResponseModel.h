@@ -14,6 +14,7 @@
 @interface YLResponseError : NSError
 @property (nonatomic, assign, readonly) NSInteger requestId;
 @property (nonatomic, copy, readonly) NSString *message;
+@property (nonatomic, strong) NSDictionary *response;
 
 - (instancetype)initWithMessage:(NSString *)message
                            code:(NSInteger)code

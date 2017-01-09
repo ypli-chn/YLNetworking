@@ -60,6 +60,9 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
 @required
 - (void)apiManagerLoadDataSuccess:(YLBaseAPIManager *)apiManager;
 - (void)apiManager:(YLBaseAPIManager *)apiManager loadDataFail:(YLResponseError *)error;
+
+@optional
+- (void)apiManagerLoadDidCancel:(YLBaseAPIManager *)apiManager;
 @end
 
 
@@ -71,6 +74,8 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
 
 - (BOOL)apiManager:(YLBaseAPIManager *)manager beforePerformFailWithResponseError:(YLResponseError *)error;
 - (void)apiManager:(YLBaseAPIManager *)manager afterPerformFailWithResponseError:(YLResponseError *)error;
+
+- (void)afterPerformCancel:(YLBaseAPIManager *)manager;
 
 - (BOOL)apiManager:(YLBaseAPIManager *)manager shouldLoadRequestWithParams:(NSDictionary *)params;
 - (void)apiManager:(YLBaseAPIManager *)manager afterLoadRequestWithParams:(NSDictionary *)params;
@@ -91,6 +96,8 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
 - (void)removeDependency:(YLBaseAPIManager *)apiManager;
 
 - (NSInteger)loadData;
+- (NSInteger)loadDataWithoutCache;
+
 - (void)cancelAllRequests;
 - (void)cancelRequestWithRequestId:(NSInteger)requestID;
 
@@ -117,6 +124,8 @@ typedef NS_ENUM (NSInteger, YLAPIManagerResponseStatus){
 
 - (BOOL)beforePerformFailWithResponseError:(YLResponseError *)error;
 - (void)afterPerformFailWithResponseError:(YLResponseError *)error;
+
+- (void)afterPerformCancel;
 
 - (BOOL)shouldLoadRequestWithParams:(NSDictionary *)params;
 - (void)afterLoadRequestWithParams:(NSDictionary *)params;

@@ -8,6 +8,7 @@
 
 #import "YLNetworking+ReactiveExtension.h"
 #import <objc/runtime.h>
+
 @interface YLBaseAPIManager (_ReactiveExtension)
 // For RACCommand, allowsConcurrentExecution is NO by default. That is to say, there's only one request. So here I record the request of requestId.
 @property (nonatomic, assign) NSInteger requestId;
@@ -55,7 +56,11 @@
         @weakify(self);
         requestCommand = [[RACCommand alloc] initWithSignalBlock:^RACSignal *(id input) {
             @strongify(self);
-            self.requestId = [self loadData];
+            if ([input boolValue]) {
+                self.requestId = [self loadDataWithoutCache];
+            } else {
+                self.requestId = [self loadData];
+            }
             return [self.requestSignal takeUntil:self.cancelCommand.executionSignals];
         }];
         objc_setAssociatedObject(self, @selector(requestCommand), requestCommand, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -70,7 +75,7 @@
         cancelCommand = [[RACCommand alloc] initWithSignalBlock:^RACSignal *(id input) {
             @strongify(self);
             [self cancelRequestWithRequestId:self.requestId];
-             NSLog(@"cancelCommand 取消请求:%lu",self.requestId);
+            NSLog(@"cancelCommand 取消请求:%lu",self.requestId);
             return [RACSignal empty];
         }];
         objc_setAssociatedObject(self, @selector(cancelCommand), cancelCommand, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -101,11 +106,17 @@
         refreshCommand = [[RACCommand alloc] initWithSignalBlock:^RACSignal *(id input) {
             @strongify(self);
             [self reset];
-            NSInteger requestId = [self loadNextPage];
+            NSInteger requestId;
+            if ([input boolValue]) {
+                requestId = [self loadNextPageWithoutCache];
+            } else {
+                requestId = [self loadNextPage];
+            }
+            
             if (requestId != kPageIsLoading) {
                 self.requestId = requestId;
             }
-            NSLog(@"[requestNextPageCommand] 发出请求:%lu",requestId);
+            NSLog(@"[refreshCommand] 发出请求:%lu",requestId);
             return self.requestSignal;
         }];
         objc_setAssociatedObject(self, @selector(refreshCommand), refreshCommand, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -123,7 +134,7 @@
             @strongify(self);
             NSInteger requestId = [self loadNextPage];
             if (requestId != kPageIsLoading) {
-                 self.requestId = requestId;
+                self.requestId = requestId;
             }
             NSLog(@"[requestNextPageCommand] 发出请求:%lu",requestId);
             return self.requestSignal;
@@ -135,7 +146,7 @@
 
 - (RACSignal *)requestErrorSignal {
     return [[RACSignal merge:@[self.refreshCommand.errors, self.requestNextPageCommand.errors]]
-                 subscribeOn:[RACScheduler mainThreadScheduler]];
+            subscribeOn:[RACScheduler mainThreadScheduler]];
 }
 
 - (RACSignal *)executionSignal {
@@ -153,30 +164,15 @@
 @end
 
 
+
 @interface RACCommand (_YLExtension)
-@property (nonatomic, assign) NSTimeInterval yl_timestamp;
+
 @end
 @implementation RACCommand (YLExtension)
 + (void)load {
-    Class clazz = [RACCommand class];
-    Method originalMethod = class_getInstanceMethod(clazz, @selector(execute:));
-    Method swizzledMethod = class_getInstanceMethod(clazz, @selector(yl_execute:));
-    
-    BOOL didAddMethod =
-    class_addMethod(clazz,
-                    @selector(execute:),
-                    method_getImplementation(swizzledMethod),
-                    method_getTypeEncoding(swizzledMethod));
-    
-    if (didAddMethod) {
-        class_replaceMethod(clazz,
-                            @selector(yl_execute:),
-                            method_getImplementation(originalMethod),
-                            method_getTypeEncoding(originalMethod));
-        
-    } else {
-        method_exchangeImplementations(originalMethod, swizzledMethod);
-    }
+    [NSObject methodSwizzlingWithTarget:@selector(execute:)
+                                  using:@selector(yl_execute:)
+                               forClass:[RACCommand class]];
 }
 
 - (RACSignal *)yl_execute:(id)input {
@@ -188,18 +184,20 @@
     return [objc_getAssociatedObject(self, @selector(yl_timestamp)) doubleValue];
 }
 
-- (void)setYl_timestamp:(NSTimeInterval)timestamp {
+- (void)yl_setTimestamp:(NSTimeInterval)timestamp {
     objc_setAssociatedObject(self, @selector(yl_timestamp), @(timestamp), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (void)tryExecuteIntervalLongerThan:(NSInteger)seconds {
+- (BOOL)tryExecuteIntervalLongerThan:(NSInteger)seconds {
+    BOOL result = NO;
     NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
     if (now - self.yl_timestamp > seconds) {
+        result = YES;
         [self execute:nil];
+        
     }
+    return result;
 }
 @end
-
-
 
 

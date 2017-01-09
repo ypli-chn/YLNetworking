@@ -12,8 +12,9 @@
 #define YLNetworkingLog TRUE
 
 typedef NS_ENUM(NSUInteger, YLResponseStatus) {
-    // 底层仅有这三种状态
+    // 底层仅有这四种状态
     YLResponseStatusSuccess,
+    YLResponseStatusCancel,
     YLResponseStatusErrorTimeout,
     YLResponseStatusErrorUnknown
 };
