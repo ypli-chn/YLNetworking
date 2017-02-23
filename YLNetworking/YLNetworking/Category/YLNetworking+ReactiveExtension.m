@@ -57,7 +57,7 @@
         @weakify(self);
         requestCommand = [[RACCommand alloc] initWithSignalBlock:^RACSignal *(id input) {
             @strongify(self);
-            if ([input boolValue]) {
+            if ([input respondsToSelector:@selector(boolValue)] && [input boolValue]) {
                 self.requestId = [self loadDataWithoutCache];
             } else {
                 self.requestId = [self loadData];
@@ -108,7 +108,7 @@
             @strongify(self);
             [self reset];
             NSInteger requestId;
-            if ([input boolValue]) {
+            if ([input respondsToSelector:@selector(boolValue)] && [input boolValue]) {
                 requestId = [self loadNextPageWithoutCache];
             } else {
                 requestId = [self loadNextPage];

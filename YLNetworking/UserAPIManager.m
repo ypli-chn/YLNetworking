@@ -26,7 +26,7 @@ NSString * const kUserAPIManagerParamsKeySearchKeywords = @"kUserAPIManagerParam
 }
 
 - (BOOL)isAuth {
-    return YES;
+    return NO;
 }
 
 - (BOOL)isRequestUsingJSON {
