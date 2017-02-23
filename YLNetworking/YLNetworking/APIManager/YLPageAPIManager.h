@@ -27,6 +27,8 @@ extern const NSInteger kPageIsLoading;
 - (void)resetToPage:(NSInteger)page;
 
 - (NSInteger)loadNextPage; // 如果正在加载则返回 kPageIsLoading，否则则返回requestId
+- (NSInteger)loadNextPageWithoutCache;
+
 
 - (instancetype)initWithPageSize:(NSInteger)pageSize;
 - (instancetype)initWithPageSize:(NSInteger)pageSize startPage:(NSInteger)page NS_DESIGNATED_INITIALIZER;

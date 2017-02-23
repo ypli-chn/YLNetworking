@@ -7,6 +7,7 @@
 //
 
 #import "YLNetworking+ReactiveExtension.h"
+#import "Foundation+YLNetworking.h"
 #import <objc/runtime.h>
 
 @interface YLBaseAPIManager (_ReactiveExtension)
@@ -170,9 +171,9 @@
 @end
 @implementation RACCommand (YLExtension)
 + (void)load {
-    [NSObject methodSwizzlingWithTarget:@selector(execute:)
-                                  using:@selector(yl_execute:)
-                               forClass:[RACCommand class]];
+    [NSObject yl_methodSwizzlingWithTarget:@selector(execute:)
+                                     using:@selector(yl_execute:)
+                                  forClass:[RACCommand class]];
 }
 
 - (RACSignal *)yl_execute:(id)input {

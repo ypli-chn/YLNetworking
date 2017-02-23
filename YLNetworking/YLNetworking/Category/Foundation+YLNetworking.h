@@ -8,6 +8,13 @@
 
 #import <Foundation/Foundation.h>
 
+@interface NSObject (Swizzling)
++ (void)yl_methodSwizzlingWithTarget:(SEL)originalSelector
+                             using:(SEL)swizzledSelector
+                          forClass:(Class)clazz;
+@end
+
+
 @interface NSString (YLNetworking)
 - (NSString *)yl_md5;
 + (NSString *)yl_urlStringForHost:(NSString *)host

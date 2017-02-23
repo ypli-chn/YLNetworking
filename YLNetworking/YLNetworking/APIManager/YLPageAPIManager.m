@@ -71,6 +71,13 @@ const NSInteger kYLPageAPIManagerDefaultPageSize = 10;
     return [super loadData];
 }
 
+- (NSInteger)loadNextPageWithoutCache {
+    if (self.isLoading) {
+        return kPageIsLoading;
+    }
+    return [super loadDataWithoutCache];
+}
+
 #pragma mark - override
 - (NSInteger)loadData {
    return [self loadNextPage];

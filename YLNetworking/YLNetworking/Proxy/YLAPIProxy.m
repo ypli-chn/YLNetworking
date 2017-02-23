@@ -12,7 +12,6 @@
 #import "NSURLRequest+YLNetworking.h"
 #import "YLNetworkingLogger.h"
 #import "Foundation+YLNetworking.h"
-#import "Macros.h"
 
 @interface YLAPIProxy()
 @property (nonatomic, strong) NSMutableDictionary *dispatchTable;
